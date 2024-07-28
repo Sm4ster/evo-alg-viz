@@ -6,10 +6,7 @@ export default class {
         m: [0, 0],
         C: [[1, 0], [0, 1]],
         sigma: 1,
-        population: {
-            delay: 0,
-            points: []
-        },
+        population: [],
 
         // fitness function params
         Q: [[1, 0], [0, 1]],

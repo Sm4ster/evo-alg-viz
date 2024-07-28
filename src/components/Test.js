@@ -49,7 +49,8 @@ export default class Test extends parentAnimation {
                     delay: 0,
                     r: 1,
                     color: this.fitness(e.coords) > this.fitness(prev_state.m) ? "red" : "green",
-                    coords: e.coords
+                    coords: e.coords,
+                    test: "test"
                 });
             }
 

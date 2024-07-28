@@ -6,6 +6,12 @@
          :viewBox="x + ' ' + y + ' ' + width + ' ' + height"
     >
       <g id="container" :transform="`translate(${width/2} ${height/2})`">
+        <g id="inner_container" transform="rotate(0)">
+          <g id="axis"></g>
+          <g id="levelsets"></g>
+          <g id="alg_state"></g>
+          <g id="population"></g>
+        </g>
       </g>
 
       <!--  0,0 point  -->
@@ -29,67 +35,67 @@
               <DialogPanel
                   class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8  sm:p-6">
 
-                  <div class="flex flex-col space-y-6 border border-indigo-600 rounded p-5 bg-white">
-                    <div class="">
-                      <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">examples</h3>
-                      <RadioSelect :options="algorithms" :selected_id="state_generator_id"
-                                   @update="state_generator_id = $event"></RadioSelect>
+                <div class="flex flex-col space-y-6 border border-indigo-600 rounded p-5 bg-white">
+                  <div class="">
+                    <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">examples</h3>
+                    <RadioSelect :options="algorithms" :selected_id="state_generator_id"
+                                 @update="state_generator_id = $event"></RadioSelect>
 
-                    </div>
-                    <div class="flex flex-col justify-between">
-                      <div class="pb-8">
-                        <div class="flex flex-col space-y-4">
-                          <div class="flex justify-center space-x-5">
-                            <span class="text-sm text-gray-500">automatic animation on/off</span>
-                            <Toggle v-model="loop.on"></Toggle>
-                          </div>
-                          <div class="flex justify-center">
-                            <button
-                                v-for="start_state_option in ['manual', 'random', 'prev_state']"
-                                @click="start_state=start_state_option"
-                                :class="[
+                  </div>
+                  <div class="flex flex-col justify-between">
+                    <div class="pb-8">
+                      <div class="flex flex-col space-y-4">
+                        <div class="flex justify-center space-x-5">
+                          <span class="text-sm text-gray-500">automatic animation on/off</span>
+                          <Toggle v-model="loop.on"></Toggle>
+                        </div>
+                        <div class="flex justify-center">
+                          <button
+                              v-for="start_state_option in ['manual', 'random', 'prev_state']"
+                              @click="start_state=start_state_option"
+                              :class="[
                             start_state === start_state_option ? 'bg-indigo-600 text-white font-semibold' : 'text-indigo-600' ,
                             start_state_option === 0 ? ' border-l rounded-l' : '',
                             start_state_option === 2 ? ' rounded-r border-r' : '',
                             'border-y border-indigo-600 py-0.5 px-3 h-8']">
-                              {{ start_state_option }}
-                            </button>
-                          </div>
+                            {{ start_state_option }}
+                          </button>
                         </div>
-                        <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">loop settings</h3>
                       </div>
-                      <div class="flex space-x-3">
-                        <div class="h-full flex flex-col justify-end">
-                          <div class="flex space-x-3">
-                            <div class="flex flex-col space-y-1">
-                              <ParameterButton class="w-40" v-model="params.A" name="A"/>
-                              <ParameterButton class="w-40" v-model="params.B" name="B"/>
-                              <ParameterButton class="w-40" v-model="params.C" name="C"/>
-                            </div>
-                            <div class="flex flex-col space-y-1">
-                              <ParameterButton class="w-40" v-model="params.m[0]" name="m0"/>
-                              <ParameterButton class="w-40" v-model="params.m[1]" name="m1"/>
-                              <ParameterButton class="w-40" v-model="params.sigma" name="sigma"/>
-                            </div>
+                      <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">loop settings</h3>
+                    </div>
+                    <div class="flex space-x-3">
+                      <div class="h-full flex flex-col justify-end">
+                        <div class="flex space-x-3">
+                          <div class="flex flex-col space-y-1">
+                            <ParameterButton class="w-40" v-model="params.A" name="A"/>
+                            <ParameterButton class="w-40" v-model="params.B" name="B"/>
+                            <ParameterButton class="w-40" v-model="params.C" name="C"/>
                           </div>
-                          <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">algorithm
-                            parameters</h3>
+                          <div class="flex flex-col space-y-1">
+                            <ParameterButton class="w-40" v-model="params.m[0]" name="m0"/>
+                            <ParameterButton class="w-40" v-model="params.m[1]" name="m1"/>
+                            <ParameterButton class="w-40" v-model="params.sigma" name="sigma"/>
+                          </div>
                         </div>
+                        <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">algorithm
+                          parameters</h3>
+                      </div>
 
-                        <div class="h-full flex flex-col justify-end">
-                          <div class="flex space-x-3">
-                            <div class="flex flex-col space-y-1">
-                              <ParameterButton class="w-40" v-model="hessian.A" name="A"/>
-                              <ParameterButton class="w-40" v-model="hessian.B" name="B"/>
-                              <ParameterButton class="w-40" v-model="hessian.C" name="C"/>
-                            </div>
+                      <div class="h-full flex flex-col justify-end">
+                        <div class="flex space-x-3">
+                          <div class="flex flex-col space-y-1">
+                            <ParameterButton class="w-40" v-model="hessian.A" name="A"/>
+                            <ParameterButton class="w-40" v-model="hessian.B" name="B"/>
+                            <ParameterButton class="w-40" v-model="hessian.C" name="C"/>
                           </div>
-                          <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">fitness
-                            parameters</h3>
                         </div>
+                        <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">fitness
+                          parameters</h3>
                       </div>
                     </div>
                   </div>
+                </div>
 
               </DialogPanel>
             </TransitionChild>
@@ -146,6 +152,7 @@ import ParameterButton from "./misc/ParameterButton.vue";
 import Toggle from "./misc/Toggle.vue";
 import RadioSelect from "./misc/RadioSelect.vue";
 import {Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot} from '@headlessui/vue'
+import {levelsets, ellipse, circle, line} from "./functions.js";
 
 const algorithms = [
   {id: 0, name: "1+1-ES", class: new OnePlusOneES()},
@@ -154,27 +161,6 @@ const algorithms = [
   {id: 3, name: "Test", class: new Test()},
 ]
 
-function parseTransform(transform) {
-  const translate = /translate\(([^)]+)\)/.exec(transform);
-  const rotate = /rotate\(([^)]+)\)/.exec(transform);
-
-  const result = {};
-
-  if (translate) {
-    const translateValues = translate[1].split(' ').map(Number);
-    result.translateX = translateValues[0];
-    result.translateY = translateValues.length > 1 ? translateValues[1] : 0;
-  }
-
-  if (rotate) {
-    const rotateValue = rotate[1].split(' ').map(Number);
-    result.rotate = rotateValue[0];
-    result.rotateCX = rotateValue.length > 1 ? rotateValue[1] : 0;
-    result.rotateCY = rotateValue.length > 2 ? rotateValue[2] : 0;
-  }
-
-  return result;
-}
 
 export default {
   name: "ParameterGraph",
@@ -362,46 +348,19 @@ export default {
       this.params.sigma = this.$_.random(1, 5, true)
     },
     update(data) {
-      d3.select('#container')
-          .selectAll("#inner_container")
-          .data([data])
-          .join(
-              enter => enter.append('g')
-                  .attr("id", "inner_container")
-                  .attr("transform", d => `rotate(${d.rotation})`),
-              update => update
-                  .transition().duration(data.duration)
-                  .attr("transform", d => `rotate(${d.rotation})`)
-          )
+      const container =  d3.select("#inner_container")
 
-      // levelsets
-      d3.select('#inner_container')
-          .selectAll('#levelsets')
-          .data([null])
-          .join('g').attr("id", "levelsets");
+      // Update existing elements
+      container.transition().duration(data.duration)
+          .attr("transform", `rotate(${data.rotation})`);
 
 
-      let hessian_eigen = math.eigs(data.Q).eigenvectors
-      let hessian_rotation_angle = Math.atan2(hessian_eigen[0].vector[1], hessian_eigen[0].vector[0]) * (180 / Math.PI);
+      if (data.levelsets) {
+        levelsets(d3.select('#levelsets'), {
+          matrix: data.Q,
+        }, data.scaling)
+      }
 
-      d3.select('#inner_container').select("#levelsets")
-          .selectAll('.levelset')
-          .data(data.levelsets ? this.$_.range(100) : [])
-          .join(
-              enter => enter
-                  .append('ellipse')
-                  .attr("class", "levelset")
-                  .attr('rx', d => d * data.scaling * Math.sqrt(hessian_eigen[0].value) * 50)
-                  .attr('ry', d => d * data.scaling * Math.sqrt(hessian_eigen[1].value) * 50)
-                  .attr("transform", d => `rotate(${hessian_rotation_angle})`)
-                  .attr('stroke', 'gray')
-                  .attr('stroke-width', 1)
-                  .attr('fill', 'none'),
-              update => update.transition().duration(data.duration)
-                  .attr('rx', d => d * data.scaling * Math.sqrt(hessian_eigen[0].value) * 50)
-                  .attr('ry', d => d * data.scaling * Math.sqrt(hessian_eigen[1].value) * 50)
-                  .attr("transform", d => `rotate(${hessian_rotation_angle})`)
-          )
 
       // axis
       d3.select('#inner_container')
@@ -441,314 +400,70 @@ export default {
 
 
       // Connection line between 0,0 and the distribution center
-      d3.select('#inner_container')
-          .selectAll('#m_line')
-          .data(data.m_line ? [data] : [])
-          .join(
-              enter => enter.append('line')
-                  .attr("id", 'm_line')
-                  .attr('x2', d => d.m[0] * d.scaling * 200)
-                  .attr('y2', d => -d.m[1] * d.scaling * 200)
-                  .attr('stroke', '#ea580c')
-                  .attr('stroke-width', 2)
-              ,
-              update => update
-                  .transition().duration(data.duration)
-                  .attrTween('x2', function (d) {
-                    if (d.transition === 'rotation' || d.transition === '-rotation') {
-                      const startX = +this.getAttribute('x2');
-                      const startY = +this.getAttribute('y2');
-                      const endX = d.m[0] * d.scaling * 200;
-                      const endY = -d.m[1] * d.scaling * 200;
+      if (data.m_line) {
+        line(
+            'm_line',
+            {
+              x: [0, data.m[0]],
+              y: [0, data.m[1]],
+              color: '#ea580c',
+              width: 2
+            },
+            d3.select('#alg_state'),
+            data.scaling
+        )
 
-                      const radius = Math.sqrt(Math.pow(endX, 2) + Math.pow(endY, 2));
-
-                      const startAngle = Math.atan2(startY, startX);
-                      const endAngle = Math.atan2(endY, endX);
-
-                      return function (t) {
-                        let angle = startAngle + t * (endAngle - startAngle);
-                        if (d.transition === '-rotation') angle = startAngle - t * (endAngle - startAngle);
-                        const x = radius * Math.cos(angle);
-                        return x;
-                      };
-                    } else {
-                      const i = d3.interpolateNumber(+this.getAttribute('x2'), d.m[0] * d.scaling * 200);
-                      return function (t) {
-                        return i(t);
-                      };
-                    }
-                  })
-                  .attrTween('y2', function (d) {
-                    if (d.transition === 'rotation' || d.transition === '-rotation') {
-                      const startX = +this.getAttribute('x2');
-                      const startY = +this.getAttribute('y2');
-                      const endX = d.m[0] * d.scaling * 200;
-                      const endY = -d.m[1] * d.scaling * 200;
-
-                      const radius = Math.sqrt(Math.pow(endX, 2) + Math.pow(endY, 2));
-
-                      const startAngle = Math.atan2(startY, startX);
-                      const endAngle = Math.atan2(endY, endX);
-
-                      return function (t) {
-                        let angle = startAngle + t * (endAngle - startAngle);
-                        if (d.transition === '-rotation') angle = startAngle - t * (endAngle - startAngle);
-                        const y = radius * Math.sin(angle);
-                        return y;
-                      };
-                    } else {
-                      const i = d3.interpolateNumber(+this.getAttribute('y2'), -d.m[1] * d.scaling * 200);
-                      return function (t) {
-                        return i(t);
-                      };
-                    }
-                  })
-          )
-
-
-      // Center of the distribution
-      d3.select('#inner_container')
-          .selectAll('#m_dot')
-          .data(data.m_dot ? [data] : [])
-          .join(enter => enter.append('circle')
-                  .attr("id", "m_dot")
-                  .attr('cx', d => d.m[0] * d.scaling * 200)
-                  .attr('cy', d => -d.m[1] * d.scaling * 200)
-                  .attr('r', 2)
-                  .attr('fill', '#ea580c')
-                  .attr('stroke', '#ea580c')
-                  .attr('stroke-width', 1),
-
-              update => update
-                  .transition().duration(data.duration)
-                  .attrTween('cx', function (d) {
-                    if (d.transition === 'rotation' || d.transition === '-rotation') {
-                      const startX = +this.getAttribute('cx');
-                      const startY = +this.getAttribute('cy');
-                      const endX = d.m[0] * d.scaling * 200;
-                      const endY = -d.m[1] * d.scaling * 200;
-
-                      const radius = Math.sqrt(Math.pow(endX, 2) + Math.pow(endY, 2));
-
-                      const startAngle = Math.atan2(startY, startX);
-                      const endAngle = Math.atan2(endY, endX);
-
-                      return function (t) {
-                        let angle = startAngle + t * (endAngle - startAngle);
-                        if (d.transition === '-rotation') angle = startAngle - t * (endAngle - startAngle);
-                        const x = radius * Math.cos(angle);
-                        return x;
-                      };
-                    } else {
-                      const i = d3.interpolateNumber(+this.getAttribute('cx'), d.m[0] * d.scaling * 200);
-                      return function (t) {
-                        return i(t);
-                      };
-                    }
-                  })
-                  .attrTween('cy', function (d) {
-                    if (d.transition === 'rotation' || d.transition === '-rotation') {
-                      const startX = +this.getAttribute('cx');
-                      const startY = +this.getAttribute('cy');
-                      const endX = d.m[0] * d.scaling * 200;
-                      const endY = -d.m[1] * d.scaling * 200;
-
-                      const radius = Math.sqrt(Math.pow(endX, 2) + Math.pow(endY, 2));
-
-                      const startAngle = Math.atan2(startY, startX);
-                      const endAngle = Math.atan2(endY, endX);
-
-                      return function (t) {
-                        let angle = startAngle + t * (endAngle - startAngle);
-                        if (d.transition === '-rotation') angle = startAngle - t * (endAngle - startAngle);
-                        const y = radius * Math.sin(angle);
-                        return y;
-                      };
-                    } else {
-                      const i = d3.interpolateNumber(+this.getAttribute('cy'), -d.m[1] * d.scaling * 200);
-                      return function (t) {
-                        return i(t);
-                      };
-                    }
-                  })
-          )
-
-
-      // Center of the distribution
-      d3.select('#inner_container')
-          .selectAll('.population')
-          .data(data.population)
-          .join(enter => enter.append('circle')
-                  .attr("class", "population")
-                  .attr('cx', d => d.coords[0] * data.scaling * 200)
-                  .attr('cy', d => -d.coords[1] * data.scaling * 200)
-                  .transition()
-                  .delay((d, i) => d.delay)
-                  .attr('r', d => d.r)
-                  .attr('fill', d => d.color)
-                  .attr('stroke', d => d.color)
-                  .attr('stroke-width', 1),
-
-              update => update
-                  .transition().duration(data.duration)
-                  .attr('fill', d => d.color)
-                  .attr('stroke', d => d.color)
-                  .attr('r', d => d.r)
-                  .attrTween('cx', function (d) {
-                    if (d.transition === 'rotation' || d.transition === '-rotation') {
-                      const startX = +this.getAttribute('cx');
-                      const startY = +this.getAttribute('cy');
-                      const endX = d.coords[0] * data.scaling * 200;
-                      const endY = -d.coords[1] * data.scaling * 200;
-
-                      const radius = Math.sqrt(Math.pow(endX, 2) + Math.pow(endY, 2));
-
-                      const startAngle = Math.atan2(startY, startX);
-                      const endAngle = Math.atan2(endY, endX);
-
-                      return function (t) {
-                        let angle = startAngle + t * (endAngle - startAngle);
-                        if (data.transition === '-rotation') angle = startAngle - t * (endAngle - startAngle);
-                        const x = radius * Math.cos(angle);
-                        return x;
-                      };
-                    } else {
-                      const i = d3.interpolateNumber(+this.getAttribute('cx'), d.coords[0] * data.scaling * 200);
-                      return function (t) {
-                        return i(t);
-                      };
-                    }
-                  })
-                  .attrTween('cy', function (d) {
-                    if (d.transition === 'rotation' || d.transition === '-rotation') {
-                      const startX = +this.getAttribute('cx');
-                      const startY = +this.getAttribute('cy');
-                      const endX = d.coords[0] * data.scaling * 200;
-                      const endY = -d.coords[1] * data.scaling * 200;
-
-                      const radius = Math.sqrt(Math.pow(endX, 2) + Math.pow(endY, 2));
-
-                      const startAngle = Math.atan2(startY, startX);
-                      const endAngle = Math.atan2(endY, endX);
-
-                      return function (t) {
-                        let angle = startAngle + t * (endAngle - startAngle);
-                        if (data.transition === '-rotation') angle = startAngle - t * (endAngle - startAngle);
-                        const y = radius * Math.sin(angle);
-                        return y;
-                      };
-                    } else {
-                      const i = d3.interpolateNumber(+this.getAttribute('cy'), -d.coords[1] * data.scaling * 200);
-                      return function (t) {
-                        return i(t);
-                      };
-                    }
-                  }),
-              exit => exit.transition()
-                  .delay((d, i) => d.delay)
-                  .attr('r', 0)
-                  .attr('fill', 'lightgray')
-                  .attr('stroke', 'lightgray')
-                  .attr('stroke-width', 0)
-                  .remove()
-          )
-
-
-      // Ellipse
-      let eigen = math.eigs(data.C).eigenvectors
-      let rotation_angle = Math.atan(eigen[0].vector[1] / eigen[0].vector[0]) * (180 / Math.PI);
-
-      if (data.rotation_bias) {
-        let prev_rotation_angle = parseTransform(d3.select('#inner_container')
-            .select('#std_dev').select("ellipse").attr('transform')).rotate
-        d3.select('#inner_container')
-            .select('#std_dev')
-            .select("ellipse")
-            .attr('transform', `rotate(${prev_rotation_angle + (data.rotation_bias * 180)})`)
       }
 
 
-      d3.select('#inner_container')
-          .selectAll('#std_dev')
-          .data(data.ellipse ? [data] : [])
-          .join(
-              enter => enter.append('g')
-                  .attr("id", "std_dev")
-                  .attr('transform', d => `translate(${d.m[0] * d.scaling * 200} ${-d.m[1] * d.scaling * 200})`)
-                  .append('ellipse')
-                  .attr('transform', `rotate(${-rotation_angle})`)
-                  .attr('rx', d => Math.sqrt(d.sigma * Math.sqrt(eigen[0].value)) * d.scaling * 200)
-                  .attr('ry', d => Math.sqrt(d.sigma * Math.sqrt(eigen[1].value)) * d.scaling * 200)
-                  .attr('fill', 'none')
-                  .attr('stroke', '#ea580c')
-                  .attr('stroke-width', 2),
-              update => update.transition().duration(data.duration)
-                  .attrTween('transform', function (d) {
-                    if (d.transition === 'rotation' || d.transition === '-rotation') {
-                      const result = parseTransform(this.getAttribute('transform'))
-                      const startX = result.translateX;
-                      const startY = result.translateY;
 
-                      const endX = d.m[0] * d.scaling * 200;
-                      const endY = -d.m[1] * d.scaling * 200;
+      if (data.m_dot) {
+        circle(
+            'm_dot',
+            {
+              delay: 0,
+              duration: data.duration,
+              transition: data.transition,
+              coords: data.m,
+              r: 2,
+              color: '#ea580c'
+            },
+            d3.select('#alg_state'),
+            data.scaling)
+      }
 
-                      const radius = Math.sqrt(Math.pow(endX, 2) + Math.pow(endY, 2));
 
-                      const startAngle = Math.atan2(startY, startX);
-                      let endAngle = Math.atan2(endY, endX);
+      if (data.population) {
+        console.log(d3.select('#population'))
+        circle(
+            'population',
+            data.population.map(d => {
+              return {
+                duration: data.duration,
+                transition: data.transition,
+                scaling: data.scaling,
+                ...d
+              }
+            }),
+            d3.select('#population'),
+            data.scaling
+        )
+      }
 
-                      return function (t) {
-                        let angle = startAngle + t * (endAngle - startAngle);
-                        if (d.transition === '-rotation') angle = startAngle - t * (endAngle - startAngle);
-                        const x = radius * Math.cos(angle);
-                        const y = radius * Math.sin(angle);
-                        return `translate(${x} ${y})`;
-                      };
-                    } else {
-                      const result = parseTransform(this.getAttribute('transform'))
-                      const x = d3.interpolateNumber(result.translateX, d.m[0] * d.scaling * 200);
-                      const y = d3.interpolateNumber(result.translateY, -d.m[1] * d.scaling * 200);
-                      return function (t) {
-                        return `translate(${x(t)} ${y(t)})`;
-                      };
-                    }
-                  })
-                  .select("ellipse")
-                  .attr('transform', `rotate(${-rotation_angle})`)
-                  .attr('rx', d => Math.sqrt(d.sigma * Math.sqrt(eigen[0].value)) * d.scaling * 200)
-                  .attr('ry', d => Math.sqrt(d.sigma * Math.sqrt(eigen[1].value)) * d.scaling * 200)
-          )
 
-      // d3.select('#inner_container')
-      //     .selectAll('#eigen_line')
-      //     .data([data])
-      //     .join(
-      //         enter => enter.append("g")
-      //             .attr("id", "eigen_line")
-      //             .attr('transform', d => `translate(${d.m[0] * d.scaling * 200} ${-d.m[1] * d.scaling * 200})`)
-      //             .append("line")
-      //             .attr('transform', `rotate(${rotation_angle})`)
-      //             .attr("x1", -200)
-      //             .attr("y1", 0)
-      //             .attr("x2", 200)
-      //             .attr("y2", 0)
-      //             .attr('stroke', 'green')
-      //             .attr('stroke-width', 2),
-      //         update => update
-      //             .attr('transform', d => `translate(${d.m[0] * d.scaling * 200} ${-d.m[1] * d.scaling * 200})`)
-      //             .select("line")
-      //             .attr('transform', `rotate(${rotation_angle})`)
-      //     )
-
-      if (data.rotation_bias) {
-        d3.select('#inner_container')
-            .select('#std_dev')
-            .select("ellipse")
-            .transition()
-            .duration(0)
-            .delay(data.duration)
-            .attr('transform', `rotate(${rotation_angle})`)
+      if (data.ellipse) {
+        ellipse(
+            'std_dev',
+            {
+              duration: data.duration,
+              rotation_bias: data.rotation_bias,
+              transition: data.transition,
+              center: data.m,
+              matrix: math.multiply(data.sigma, data.C)
+            },
+            d3.select('#alg_state'),
+            data.scaling
+        )
       }
     },
     decimals(value, decimals = 2) {
