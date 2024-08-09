@@ -280,8 +280,8 @@ export function ellipse(tag, data, element, scaling) {
                 .attr('transform', d => `translate(${d.center[0] * scaling * 200} ${-d.center[1] * scaling * 200})`)
                 .append('ellipse')
                 .attr('transform', d => `rotate(${-d.rotation_angle})`)
-                .attr('rx', d => Math.sqrt(Math.sqrt(d.eigen[0].value)) * scaling * 200)
-                .attr('ry', d => Math.sqrt(Math.sqrt(d.eigen[1].value)) * scaling * 200)
+                .attr('rx', d => Math.sqrt(d.eigen[0].value) * scaling * 200)
+                .attr('ry', d => Math.sqrt(d.eigen[1].value) * scaling * 200)
                 .attr('fill', 'none')
                 .attr('stroke', '#ea580c')
                 .attr('stroke-width', 2),
@@ -318,8 +318,8 @@ export function ellipse(tag, data, element, scaling) {
                 })
                 .select("ellipse")
                 .attr('transform', d => `rotate(${-d.rotation_angle})`)
-                .attr('rx', d => Math.sqrt(Math.sqrt(d.eigen[0].value)) * scaling * 200)
-                .attr('ry', d => Math.sqrt(Math.sqrt(d.eigen[1].value)) * scaling * 200)
+                .attr('rx', d => Math.sqrt(d.eigen[0].value) * scaling * 200)
+                .attr('ry', d => Math.sqrt(d.eigen[1].value) * scaling * 200)
         )
 
 
@@ -328,4 +328,95 @@ export function ellipse(tag, data, element, scaling) {
         .data(data)
         .select("ellipse")
         .attr('transform', d => `rotate(${-d.rotation_angle})`)
+}
+
+import * as d3hb from 'd3-hexbin'
+export function gaussian_density(center, variance, covariance){
+    // density
+    const grid = [];
+    const step = 3;
+    for (let x = -1000; x <= 1000; x += step) {
+        for (let y = -1000; y <= 1000; y += step) {
+            const density = gaussianDensity([x, y], [0, 0], math.multiply(variance * 40000, covariance)) * 100;
+            if (density > 1e-4) grid.push({x, y, density});
+        }
+    }
+
+    // Create the hexbin layout
+    const hexbin = d3hb.hexbin()
+        .extent([[-10, -10], [10, 10]])
+        .radius((step + 2) * Math.sqrt(2) / 2);
+
+    const bins = hexbin(grid.map(d => [d.x, d.y, d.density]));
+
+    // Create a color scale
+    const extent = d3.extent(bins, d => d3.mean(d, p => p[2]));
+    const color = d3.scaleSequential(extent, d3.interpolateBlues)
+    // const color = d3.scaleLinear([0, 0.022], ["white", "#69b3a2"])
+
+
+    d3.select('#density')
+        .selectAll(".hexagon")
+        .data(bins)
+        .join(
+            enter => enter.append("path")
+                .attr("class", "hexagon")
+                .attr("d", hexbin.hexagon())
+                .attr("transform", d => `translate(${d.x + center[0] * 200},${-(d.y + center[1] * 200)})`)
+                .attr("stroke", d => {
+                    return color(d3.mean(d, p => p[2]))
+                })
+                .attr("stroke-width", 1)
+                .attr("fill", d => {
+                    return color(d3.mean(d, p => p[2]))
+                }),
+            update => update.transition()
+                .attr("class", "hexagon")
+                .attr("d", hexbin.hexagon())
+                .attr("transform", d => `translate(${d.x + center[0] * 200},${-(d.y + center[1] * 200)})`)
+                .attr("stroke", d => {
+                    return color(d3.mean(d, p => p[2]))
+                })
+                .attr("stroke-width", 1)
+                .attr("fill", d => {
+                    return color(d3.mean(d, p => p[2]))
+                })
+        )
+
+}
+
+export function gaussianDensity(point, mean, covariance) {
+    // Destructure the point and the mean
+    const [x, y] = point;
+    const [muX, muY] = mean;
+
+    // Destructure the covariance matrix
+    const [[sigmaXX, sigmaXY], [sigmaYX, sigmaYY]] = covariance;
+
+    // Calculate the determinant of the covariance matrix
+    const detSigma = sigmaXX * sigmaYY - sigmaXY * sigmaYX;
+
+    // Calculate the inverse of the covariance matrix if the determinant is not zero
+    if (detSigma === 0) {
+        throw new Error("The covariance matrix is singular and cannot be inverted.");
+    }
+
+    const inverseSigma = [
+        [sigmaYY / detSigma, -sigmaXY / detSigma],
+        [-sigmaYX / detSigma, sigmaXX / detSigma]
+    ];
+
+    // Compute the vector (x - mu)
+    const diffX = x - muX;
+    const diffY = y - muY;
+
+    // Compute the quadratic form (x - mu)^T * Sigma^{-1} * (x - mu)
+    const quadraticForm = diffX * (inverseSigma[0][0] * diffX + inverseSigma[0][1] * diffY) +
+        diffY * (inverseSigma[1][0] * diffX + inverseSigma[1][1] * diffY);
+
+    // Compute the density using the Gaussian density formula
+    const coefficient = 1 / (2 * Math.PI * Math.sqrt(detSigma));
+    const exponent = -0.5 * quadraticForm;
+
+    return coefficient * Math.exp(exponent);
 }

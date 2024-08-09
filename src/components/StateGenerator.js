@@ -11,18 +11,23 @@ export default class {
         // fitness function params
         Q: [[1, 0], [0, 1]],
 
+        formula: [],
+        svg: [],
+
         // Visibility
-        levelsets: true,
+        center: false,
+        levelsets: false,
         one_level: false,
         m_line: false,
-        m_dot: true,
-        ellipse: true,
+        m_dot: false,
+        ellipse: false,
         x_axis: false,
         y_axis: false,
         alpha: false,
-        show_m: true,
-        show_C: true,
-        show_sigma: true,
+        show_m: false,
+        show_C: false,
+        show_sigma: false,
+        density: false,
 
         // transition type
         transition: 'rotation',
@@ -31,20 +36,20 @@ export default class {
         duration: 1000,
     }
 
-    fitness(x, Q=false) {
-        if(Q === false) {
+    fitness(x, Q = false) {
+        if (Q === false) {
             Q = this.start_state.Q // [[this.start_state.Q[0][0],  this.start_state.Q[0][1]],[ this.start_state.Q[1][0], this.start_state.Q[1][1]]]
         }
         // console.log(math.transpose(x), math.multiply(math.multiply(math.transpose(x), Q), x))
         return math.multiply(math.multiply(math.transpose(x), Q), x);
     }
 
-    set_fitness_params(params){
+    set_fitness_params(params) {
         this.fitness_params = params;
     }
 
     set_start(state) {
-        this.start_state = {...this.start_state, ...state}
+        this.start_state = {...this._start_state, ...this.start_state, ...state}
         return this.fill_step_cache()
     }
 

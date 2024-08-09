@@ -7,17 +7,15 @@
     >
       <g id="container" :transform="`translate(${width/2} ${height/2})`">
         <g id="inner_container" transform="rotate(0)">
+          <g id="density"></g>
           <g id="axis"></g>
           <g id="levelsets"></g>
           <g id="alg_state"></g>
           <g id="population"></g>
         </g>
+        <g id="formula"></g>
+        <g id="graphics"></g>
       </g>
-
-      <!--  0,0 point  -->
-      <circle :cx='width/2' :cy='height/2' r='1' stroke="black" :stroke-width="height / 600"></circle>
-
-
     </svg>
     <TransitionRoot as="template" :show="show.settings">
       <Dialog class="relative z-10" @close="show.settings = false">
@@ -120,23 +118,23 @@
       <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">transformation steps</h3>
     </div>
 
-    <div class="flex space-x-10 bg-white border border-indigo-700 p-5 rounded absolute top-0 left-0">
-      <span class="text-xl" v-if="steps[current_step].show_C"
-            v-html="katex.renderToString(`C=\\begin{bmatrix} ${decimals(steps[current_step].C[0][0])} & ${decimals(steps[current_step].C[0][1])}  \\\\ ${decimals(steps[current_step].C[1][0])} & ${decimals(steps[current_step].C[1][1])} \\end{bmatrix}`)"/>
-      <span class="text-xl" v-if="steps[current_step].show_m"
-            v-html="katex.renderToString(`m=\\begin{bmatrix} ${decimals(steps[current_step].m[0])} \\\\ ${decimals(steps[current_step].m[1])} \\end{bmatrix}`)"/>
-      <span class="text-xl my-auto" v-if="steps[current_step].show_sigma"
-            v-html="katex.renderToString(`\\sigma= ${decimals(steps[current_step].sigma)}`)"/>
-    </div>
+    <!--    <div class="flex space-x-10 bg-white border border-indigo-700 p-5 rounded absolute top-0 left-0">-->
+    <!--      <span class="text-xl" v-if="steps[current_step].show_C"-->
+    <!--            v-html="katex.renderToString(`C=\\begin{bmatrix} ${decimals(steps[current_step].C[0][0])} & ${decimals(steps[current_step].C[0][1])}  \\\\ ${decimals(steps[current_step].C[1][0])} & ${decimals(steps[current_step].C[1][1])} \\end{bmatrix}`)"/>-->
+    <!--      <span class="text-xl" v-if="steps[current_step].show_m"-->
+    <!--            v-html="katex.renderToString(`m=\\begin{bmatrix} ${decimals(steps[current_step].m[0])} \\\\ ${decimals(steps[current_step].m[1])} \\end{bmatrix}`)"/>-->
+    <!--      <span class="text-xl my-auto" v-if="steps[current_step].show_sigma"-->
+    <!--            v-html="katex.renderToString(`\\sigma= ${decimals(steps[current_step].sigma)}`)"/>-->
+    <!--    </div>-->
 
-    <div class="flex flex-col bg-white border border-indigo-700 p-5 rounded absolute top-0 right-0">
+    <!--    <div class="flex flex-col bg-white border border-indigo-700 p-5 rounded absolute top-0 right-0">-->
 
-      <div v-for="(row, i) in steps[current_step].latex"
-           :class="['text-xl p-1', steps[current_step].highlight_row === i ? 'border-2 border-indigo-600': ''] "
-      >
-        <span v-html="katex.renderToString(row.string)"></span>
-      </div>
-    </div>
+    <!--      <div v-for="(row, i) in steps[current_step].latex"-->
+    <!--           :class="['text-xl p-1', steps[current_step].highlight_row === i ? 'border-2 border-indigo-600': ''] "-->
+    <!--      >-->
+    <!--        <span v-html="katex.renderToString(row.string)"></span>-->
+    <!--      </div>-->
+    <!--    </div>-->
   </div>
 </template>
 
@@ -146,19 +144,23 @@ import katex from "katex";
 import OnePlusOneES from "./1+1-ES.js";
 import OnePlusOneCMAES from "./1+1-CMA-ES.js";
 import NormalForm from "./NormalForm.js";
+import NormalDistribution from "./NormalDistribution.js";
+import Scene1 from "./Scene1.js";
 import Test from "./Test.js"
 import * as d3 from 'd3'
 import ParameterButton from "./misc/ParameterButton.vue";
 import Toggle from "./misc/Toggle.vue";
 import RadioSelect from "./misc/RadioSelect.vue";
 import {Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot} from '@headlessui/vue'
-import {levelsets, ellipse, circle, line} from "./functions.js";
+import {levelsets, ellipse, circle, line, gaussian_density} from "./functions.js";
 
 const algorithms = [
   {id: 0, name: "1+1-ES", class: new OnePlusOneES()},
   {id: 1, name: "1+1-CMA-ES", class: new OnePlusOneCMAES()},
   {id: 2, name: "CMA-ES Normalform", class: new NormalForm()},
-  {id: 3, name: "Test", class: new Test()},
+  {id: 3, name: "Normal Distribution", class: new NormalDistribution()},
+  {id: 4, name: "Scene 1", class: new Scene1()},
+  {id: 5, name: "Test", class: new Test()},
 ]
 
 
@@ -167,7 +169,7 @@ export default {
   components: {RadioSelect, Toggle, ParameterButton, Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot},
   data() {
     return {
-      state_generator_id: 3,
+      state_generator_id: 4,
 
       steps: [],
       start_state: "manual",
@@ -194,7 +196,7 @@ export default {
       },
       show: {
         steps: true,
-        settings: true,
+        settings: false,
       },
       interval_id: false,
       loop: {
@@ -348,11 +350,96 @@ export default {
       this.params.sigma = this.$_.random(1, 5, true)
     },
     update(data) {
-      const container =  d3.select("#inner_container")
+      d3.select("#graphics").selectAll("g.graphic")
+          .data(data.svg, d => d.id)
+          .join(
+              enter => enter.append("g")
+                  .attr("class", "graphic")
+                  .attr("transform", d => `scale(${d.scaling ?? 1}) translate(${d.position[0]} ${d.position[1]})`)
+                  .append("g")
+                  .attr("transform", d => `rotate(${d.rotation ?? 0}, 50, 50)`)
+                  .html(d => d.data)
+                  .transition()
+                  .attr("opacity", 1),
+              update => {
+                update
+                    .transition()
+                    .attr("transform", d => `scale(${d.scaling ?? 1}) translate(${d.position[0]} ${d.position[1]})`);
+                update.select("g")
+                    .html(d => d.data)
+                    .transition()
+                    .duration(2000)
+                    .attrTween("transform", function() {
+                      const px = 50; // x-coordinate of the arbitrary point
+                      const py = 50; // y-coordinate of the arbitrary point
 
-      // Update existing elements
+                      const startAngle = 0;
+                      const endAngle = 135;
+                      return d3.interpolateString(
+                          `translate(${px}, ${py}) rotate(${startAngle}) translate(${-px}, ${-py})`,
+                          `translate(${px}, ${py}) rotate(${endAngle}) translate(${-px}, ${-py})`
+                      );
+                    })
+                    // .attr("transform", d => `translate(0,0) rotate(${d.rotation ?? 0}, 50, 50)`)
+
+                return update;
+              }
+          )
+
+
+      d3.select("#formula").selectAll("g")
+          .data(data.formula, d => d.id)
+          .join(
+              enter => enter.append("g")
+                  .attr("transform", d => `scale(${d.scaling ?? 1}) rotate(${d.rotation ?? 0}) translate(${d.position[0]} ${d.position[1]})`)
+                  .append("foreignObject")
+                  .attr("width", "100%")
+                  .attr("height", "100%")
+                  .html(d => katex.renderToString(d.text))
+                  .transition()
+                  .attr("opacity", 1),
+              update => update.transition()
+                  .duration(d => d.duration)
+                  .delay(d => d.delay)
+                  .attr("transform", d => `scale(${d.scaling ?? 1}) rotate(${d.rotation ?? 0}) translate(${d.position[0]} ${d.position[1]})`)
+                  .select("foreignObject")
+                  .attr("width", "100%")
+                  .attr("height", "100%")
+                  .transition()
+                  .duration(200) // Fade in duration
+                  .style("opacity", 0)
+                  .each(function (d) {
+                    const element = this;
+                    setTimeout(() => {
+                      element.innerHTML = katex.renderToString(d.text);
+                      d3.select(element)
+                          .transition()
+                          .duration(200) // Fade in duration
+                          .style("opacity", 1);
+                    }, d.delay + 250)
+                  })
+          )
+
+      const container = d3.select("#inner_container")
+
+// Update existing elements
       container.transition().duration(data.duration)
           .attr("transform", `rotate(${data.rotation})`);
+
+
+      d3.select('#levelsets')
+          .selectAll("#centerpoint")
+          .data(data.centerpoint ? [null] : [])
+          .join(
+              enter => enter.append("circle")
+                  .attr("id", "centerpoint")
+                  .attr("cx", 0)
+                  .attr("cy", 0)
+                  .attr("r", 1)
+                  .attr("stroke", "black")
+                  .attr("stroke-width", this.height / 600),
+              update => update.transition().attr("r", 1)
+          )
 
 
       if (data.levelsets) {
@@ -362,7 +449,7 @@ export default {
       }
 
 
-      // axis
+// axis
       d3.select('#inner_container')
           .selectAll('#x_axis')
           .data(data.x_axis ? [data] : [])
@@ -383,7 +470,7 @@ export default {
           .attr('stroke', 'rgb(211,211,211)')
           .attr('stroke-width', 2);
 
-      // one level
+// one level
       d3.select('#inner_container')
           .selectAll('#one_level')
           .data(data.one_level ? [data] : [])
@@ -399,7 +486,15 @@ export default {
           )
 
 
-      // Connection line between 0,0 and the distribution center
+      if (data.density) {
+        gaussian_density(
+            data.m,
+            data.sigma,
+            data.C
+        );
+      }
+
+// Connection line between 0,0 and the distribution center
       if (data.m_line) {
         line(
             'm_line',
@@ -414,7 +509,6 @@ export default {
         )
 
       }
-
 
 
       if (data.m_dot) {
@@ -434,7 +528,6 @@ export default {
 
 
       if (data.population) {
-        console.log(d3.select('#population'))
         circle(
             'population',
             data.population.map(d => {
@@ -468,24 +561,29 @@ export default {
     },
     decimals(value, decimals = 2) {
       return Math.round(value * Math.pow(10, decimals)) / Math.pow(10, decimals)
-    },
+    }
+    ,
     drag(e) {
       if (this.dragging) {
         this.x -= this.zoom * e.movementX
         this.y -= this.zoom * e.movementY
       }
-    },
+    }
+    ,
     wheel: function (event) {
       event.preventDefault();
       if (event.wheelDelta > 0) this.zoom /= 1.1
       if (event.wheelDelta < 0) this.zoom *= 1.1
-    },
+    }
+    ,
     startDrag() {
       this.dragging = true;
-    },
+    }
+    ,
     stopDrag() {
       this.dragging = false;
-    },
+    }
+    ,
     keydown(e) {
       switch (e.key) {
         case "s":
