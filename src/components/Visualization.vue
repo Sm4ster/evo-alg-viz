@@ -152,7 +152,8 @@ import ParameterButton from "./misc/ParameterButton.vue";
 import Toggle from "./misc/Toggle.vue";
 import RadioSelect from "./misc/RadioSelect.vue";
 import {Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot} from '@headlessui/vue'
-import {levelsets, ellipse, circle, line, gaussian_density} from "./functions.js";
+import {levelsets, ellipse, circle, line, gaussian_density, parseTransform, NumberInterpolator} from "./functions.js";
+
 
 const algorithms = [
   {id: 0, name: "1+1-ES", class: new OnePlusOneES()},
@@ -350,6 +351,20 @@ export default {
       this.params.sigma = this.$_.random(1, 5, true)
     },
     update(data) {
+      const interpolateX = d3.interpolate(this.x, data.x);
+      const interpolateY = d3.interpolate(this.y, data.y);
+      const interpolateZoom = d3.interpolate(this.zoom, data.zoom);
+
+      d3.transition()
+          .duration(1000)
+          .tween("dataTween", () => {
+            return (t) => {
+              this.x = interpolateX(t);
+              this.y = interpolateY(t);
+              this.zoom = interpolateZoom(t);
+            };
+          });
+
       d3.select("#graphics").selectAll("g.graphic")
           .data(data.svg, d => d.id)
           .join(
@@ -366,22 +381,20 @@ export default {
                     .transition()
                     .attr("transform", d => `scale(${d.scaling ?? 1}) translate(${d.position[0]} ${d.position[1]})`);
                 update.select("g")
-                    .html(d => d.data)
+                    // .html(d => d.data)
                     .transition()
                     .duration(2000)
-                    .attrTween("transform", function() {
+                    .attrTween("transform", function (d) {
                       const px = 50; // x-coordinate of the arbitrary point
                       const py = 50; // y-coordinate of the arbitrary point
 
                       const startAngle = 0;
-                      const endAngle = 135;
+                      const endAngle = d.rotation;
                       return d3.interpolateString(
                           `translate(${px}, ${py}) rotate(${startAngle}) translate(${-px}, ${-py})`,
                           `translate(${px}, ${py}) rotate(${endAngle}) translate(${-px}, ${-py})`
                       );
                     })
-                    // .attr("transform", d => `translate(0,0) rotate(${d.rotation ?? 0}, 50, 50)`)
-
                 return update;
               }
           )
@@ -398,27 +411,42 @@ export default {
                   .html(d => katex.renderToString(d.text))
                   .transition()
                   .attr("opacity", 1),
-              update => update.transition()
-                  .duration(d => d.duration)
-                  .delay(d => d.delay)
-                  .attr("transform", d => `scale(${d.scaling ?? 1}) rotate(${d.rotation ?? 0}) translate(${d.position[0]} ${d.position[1]})`)
-                  .select("foreignObject")
-                  .attr("width", "100%")
-                  .attr("height", "100%")
-                  .transition()
-                  .duration(200) // Fade in duration
-                  .style("opacity", 0)
-                  .each(function (d) {
-                    const element = this;
-                    setTimeout(() => {
-                      element.innerHTML = katex.renderToString(d.text);
-                      d3.select(element)
-                          .transition()
-                          .duration(200) // Fade in duration
-                          .style("opacity", 1);
-                    }, d.delay + 250)
-                  })
-          )
+              update => {
+                update.transition()
+                    .duration(d => d.duration)
+                    .delay(d => d.delay)
+                    .attr("transform", d => `scale(${d.scaling ?? 1}) rotate(${d.rotation ?? 0}) translate(${d.position[0]} ${d.position[1]})`)
+
+
+                const interpolateNumber = NumberInterpolator("f(5.1)", "f(10)");
+                update.select("foreignObject").transition()
+                    .duration(1000)
+                    .tween("dataTween", function(d) {
+                      const element = this;
+                      console.log(this, d)
+                      return (t) => {
+                        const interpolatedString = interpolateNumber(t);
+                        element.innerHTML = katex.renderToString(String(interpolatedString));
+                      };
+                    });
+
+                // update.select("foreignObject")
+                // .transition()
+                // .duration(500) // Fade in duration
+                // .style("opacity", 0)
+                // .each(function (d) {
+                //   const element = this;
+                //   setTimeout(() => {
+                //     element.innerHTML = katex.renderToString(d.text);
+                //     d3.select(element)
+                //         .transition()
+                //         .duration(200) // Fade in duration
+                //         .style("opacity", 1);
+                //   }, 500)
+                // })
+
+                return update;
+              })
 
       const container = d3.select("#inner_container")
 

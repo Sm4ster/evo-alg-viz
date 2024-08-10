@@ -2,9 +2,11 @@ import * as _ from 'lodash';
 import * as d3 from "d3";
 import * as math from "mathjs";
 
-function parseTransform(transform) {
+export function parseTransform(transform) {
     const translate = /translate\(([^)]+)\)/.exec(transform);
     const rotate = /rotate\(([^)]+)\)/.exec(transform);
+
+    console.log(rotate)
 
     const result = {};
 
@@ -419,4 +421,34 @@ export function gaussianDensity(point, mean, covariance) {
     const exponent = -0.5 * quadraticForm;
 
     return coefficient * Math.exp(exponent);
+}
+
+
+
+export function NumberInterpolator(startString, endString) {
+    // Extract the number from the start and end strings using a regex
+    const startMatch = startString.match(/-?\d+(\.\d+)?/);
+    const endMatch = endString.match(/-?\d+(\.\d+)?/);
+
+    // If matches are not found, return the start string as the interpolated value (edge case)
+    if (!startMatch || !endMatch) {
+        return () => startString;
+    }
+
+    const startNumber = parseFloat(startMatch[0]);
+    const endNumber = parseFloat(endMatch[0]);
+
+    // Determine the number of decimal places in the start number
+    const decimals = (startMatch[0].split('.')[1] || "").length;
+
+    // Create a D3 interpolator for these numbers
+    const numberInterpolator = d3.interpolateNumber(startNumber, endNumber);
+
+    return function(t) {
+        // Interpolate the number
+        const interpolatedNumber = numberInterpolator(t);
+
+        // Replace the original number in the string with the interpolated value
+        return startString.replace(startMatch[0], interpolatedNumber.toFixed(decimals));
+    };
 }

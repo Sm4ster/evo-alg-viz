@@ -14,6 +14,10 @@ export default class {
         formula: [],
         svg: [],
 
+        x: 0,
+        y: 0,
+        zoom: 1,
+
         // Visibility
         center: false,
         levelsets: false,
