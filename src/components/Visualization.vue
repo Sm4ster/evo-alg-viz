@@ -3,17 +3,19 @@
     <svg class="bg-white h-full z-10" ref="svg"
          :width="base_width"
          :height="base_height"
-         :viewBox="x + ' ' + y + ' ' + width + ' ' + height"
+         :viewBox="x.value + ' ' + y.value + ' ' + width + ' ' + height"
     >
       <g id="container" :transform="`translate(${width/2} ${height/2})`">
-        <g id="inner_container" transform="rotate(0)">
-          <g id="density"></g>
-          <g id="axis"></g>
+        <g id="graph" transform="rotate(0)">
+          <g id="x_axis"></g>
+          <g id="y_axis"></g>
           <g id="levelsets"></g>
-          <g id="alg_state"></g>
+        </g>
+        <g id="algorithm" transform="rotate(0)">
+          <g id="density"></g>
           <g id="population"></g>
         </g>
-        <g id="formula"></g>
+        <g id="equations"></g>
         <g id="graphics"></g>
       </g>
     </svg>
@@ -139,20 +141,35 @@
 </template>
 
 <script>
+import * as d3 from 'd3'
 import * as math from 'mathjs'
 import katex from "katex";
-import OnePlusOneES from "./1+1-ES.js";
-import OnePlusOneCMAES from "./1+1-CMA-ES.js";
-import NormalForm from "./NormalForm.js";
-import NormalDistribution from "./NormalDistribution.js";
-import Scene1 from "./Scene1.js";
-import Test from "./Test.js"
-import * as d3 from 'd3'
+import {ref} from 'vue'
+
+import OnePlusOneES from "../animations/algorithms/1+1-ES.js";
+import OnePlusOneCMAES from "../animations/algorithms/1+1-CMA-ES.js";
+import NormalForm from "../animations/misc/NormalForm.js";
+import NormalDistribution from "../animations/misc/NormalDistribution.js";
+import Scene1 from "../animations/IntroductionToES/Scene1.js";
+import Test from "../animations/Test.js"
+
 import ParameterButton from "./misc/ParameterButton.vue";
 import Toggle from "./misc/Toggle.vue";
 import RadioSelect from "./misc/RadioSelect.vue";
 import {Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot} from '@headlessui/vue'
-import {levelsets, ellipse, circle, line, gaussian_density, parseTransform, NumberInterpolator} from "./functions.js";
+import {
+  levelsets,
+  ellipse,
+  circle,
+  line,
+  gaussian_density,
+  single_level,
+  x_axis,
+  y_axis,
+  graphics,
+  equations,
+  viewBox
+} from "./GraphicUtils.js";
 
 
 const algorithms = [
@@ -170,14 +187,12 @@ export default {
   components: {RadioSelect, Toggle, ParameterButton, Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot},
   data() {
     return {
-      state_generator_id: 4,
+      state_generator_id: 2,
 
       steps: [],
       start_state: "manual",
       current_step: 0,
-      x: 0,
-      y: 0,
-      zoom: 1,
+
       dragging: false,
       base_width: null,
       base_height: null,
@@ -284,6 +299,11 @@ export default {
     }
   },
   created() {
+    // Define reactive references using ref
+    this.x = ref(0);
+    this.y = ref(0);
+    this.zoom = ref(1);
+
     this.steps = this.state_generator.set_start({
       m: [...this.params.m],
       C: [[this.params.A, this.params.B], [this.params.B, this.params.C]],
@@ -326,10 +346,10 @@ export default {
       return katex
     },
     height() {
-      return this.zoom * this.base_height
+      return this.zoom.value * this.base_height
     },
     width() {
-      return this.zoom * this.base_width
+      return this.zoom.value * this.base_width
     },
 
   },
@@ -351,191 +371,71 @@ export default {
       this.params.sigma = this.$_.random(1, 5, true)
     },
     update(data) {
-      const interpolateX = d3.interpolate(this.x, data.x);
-      const interpolateY = d3.interpolate(this.y, data.y);
-      const interpolateZoom = d3.interpolate(this.zoom, data.zoom);
+      console.log(data)
+      // zooming and moving
+      viewBox(data.viewbox.x,  this.x)
+      viewBox(data.viewbox.y,  this.y)
+      viewBox(data.viewbox.zoom, this.zoom)
 
-      d3.transition()
-          .duration(1000)
-          .tween("dataTween", () => {
-            return (t) => {
-              this.x = interpolateX(t);
-              this.y = interpolateY(t);
-              this.zoom = interpolateZoom(t);
-            };
-          });
+      // const interpolate = d3.interpolate(this.zoom, data.viewbox.zoom.value);
+      // d3.transition()
+      //     .duration(data.viewbox.zoom.duration)
+      //     .delay(data.viewbox.zoom.delay)
+      //     .tween("dataTween", () => {
+      //       return (t) => {
+      //         this.zoom = interpolate(t);
+      //       };
+      //     });
 
-      d3.select("#graphics").selectAll("g.graphic")
-          .data(data.svg, d => d.id)
-          .join(
-              enter => enter.append("g")
-                  .attr("class", "graphic")
-                  .attr("transform", d => `scale(${d.scaling ?? 1}) translate(${d.position[0]} ${d.position[1]})`)
-                  .append("g")
-                  .attr("transform", d => `rotate(${d.rotation ?? 0}, 50, 50)`)
-                  .html(d => d.data)
-                  .transition()
-                  .attr("opacity", 1),
-              update => {
-                update
-                    .transition()
-                    .attr("transform", d => `scale(${d.scaling ?? 1}) translate(${d.position[0]} ${d.position[1]})`);
-                update.select("g")
-                    // .html(d => d.data)
-                    .transition()
-                    .duration(2000)
-                    .attrTween("transform", function (d) {
-                      const px = 50; // x-coordinate of the arbitrary point
-                      const py = 50; // y-coordinate of the arbitrary point
-
-                      const startAngle = 0;
-                      const endAngle = d.rotation;
-                      return d3.interpolateString(
-                          `translate(${px}, ${py}) rotate(${startAngle}) translate(${-px}, ${-py})`,
-                          `translate(${px}, ${py}) rotate(${endAngle}) translate(${-px}, ${-py})`
-                      );
-                    })
-                return update;
-              }
-          )
+      // // graphics and icons
+      // graphics(d3.select("#graphics"), data.graphics)
+      //
+      // // math and formulas
+      // equations(d3.select("#equations"), data.equations)
 
 
-      d3.select("#formula").selectAll("g")
-          .data(data.formula, d => d.id)
-          .join(
-              enter => enter.append("g")
-                  .attr("transform", d => `scale(${d.scaling ?? 1}) rotate(${d.rotation ?? 0}) translate(${d.position[0]} ${d.position[1]})`)
-                  .append("foreignObject")
-                  .attr("width", "100%")
-                  .attr("height", "100%")
-                  .html(d => katex.renderToString(d.text))
-                  .transition()
-                  .attr("opacity", 1),
-              update => {
-                update.transition()
-                    .duration(d => d.duration)
-                    .delay(d => d.delay)
-                    .attr("transform", d => `scale(${d.scaling ?? 1}) rotate(${d.rotation ?? 0}) translate(${d.position[0]} ${d.position[1]})`)
+      // rotation of the graph and algorithm
+      d3.select("#graph").transition().duration(data.duration)
+          .attr("transform", `rotate(${data.graph.rotation.value})`);
+
+      d3.select("#algorithm").transition().duration(data.duration)
+          .attr("transform", `rotate(${data.algorithm.rotation.value})`);
 
 
-                const interpolateNumber = NumberInterpolator("f(5.1)", "f(10)");
-                update.select("foreignObject").transition()
-                    .duration(1000)
-                    .tween("dataTween", function(d) {
-                      const element = this;
-                      console.log(this, d)
-                      return (t) => {
-                        const interpolatedString = interpolateNumber(t);
-                        element.innerHTML = katex.renderToString(String(interpolatedString));
-                      };
-                    });
+      // axis
+      x_axis(d3.select("#x_axis"), data.graph.x_axis, data.graph.scaling.value, this.width)
+      y_axis(d3.select("#y_axis"), data.graph.y_axis, data.graph.scaling.value, this.height)
 
-                // update.select("foreignObject")
-                // .transition()
-                // .duration(500) // Fade in duration
-                // .style("opacity", 0)
-                // .each(function (d) {
-                //   const element = this;
-                //   setTimeout(() => {
-                //     element.innerHTML = katex.renderToString(d.text);
-                //     d3.select(element)
-                //         .transition()
-                //         .duration(200) // Fade in duration
-                //         .style("opacity", 1);
-                //   }, 500)
-                // })
+      // centerpoint and levelsets
+      if (data.centerpoint) centerpoint(d3.select('#levelsets'))
+      if (data.levelsets) levelsets(d3.select('#levelsets'), {matrix: data.Q,}, data.scaling)
 
-                return update;
-              })
-
-      const container = d3.select("#inner_container")
-
-// Update existing elements
-      container.transition().duration(data.duration)
-          .attr("transform", `rotate(${data.rotation})`);
+      // one level
+      single_level(d3.select("levelsets"), 1, data.scaling)
 
 
-      d3.select('#levelsets')
-          .selectAll("#centerpoint")
-          .data(data.centerpoint ? [null] : [])
-          .join(
-              enter => enter.append("circle")
-                  .attr("id", "centerpoint")
-                  .attr("cx", 0)
-                  .attr("cy", 0)
-                  .attr("r", 1)
-                  .attr("stroke", "black")
-                  .attr("stroke-width", this.height / 600),
-              update => update.transition().attr("r", 1)
-          )
-
-
-      if (data.levelsets) {
-        levelsets(d3.select('#levelsets'), {
-          matrix: data.Q,
-        }, data.scaling)
-      }
-
-
-// axis
-      d3.select('#inner_container')
-          .selectAll('#x_axis')
-          .data(data.x_axis ? [data] : [])
-          .join('line')
-          .attr("id", "x_axis")
-          .attr('y1', -this.height * 10)
-          .attr('y2', this.height * 10)
-          .attr('stroke', 'rgb(211,211,211)')
-          .attr('stroke-width', 2);
-
-      d3.select('#inner_container')
-          .selectAll('#y_axis')
-          .data(data.y_axis ? [data] : [])
-          .join('line')
-          .attr("id", "y_axis")
-          .attr('x1', -this.width * 10)
-          .attr('x2', this.width * 10)
-          .attr('stroke', 'rgb(211,211,211)')
-          .attr('stroke-width', 2);
-
-// one level
-      d3.select('#inner_container')
-          .selectAll('#one_level')
-          .data(data.one_level ? [data] : [])
-          .join(
-              enter => enter.append('circle')
-                  .attr("id", "one_level")
-                  .attr('stroke', 'black')
-                  .attr('stroke-width', 2)
-                  .attr('fill', 'none')
-                  .attr('r', d => d.scaling * 200),
-              update => update.transition().duration(data.duration)
-                  .attr('r', d => d.scaling * 200)
-          )
-
-
+      // algorithm state
       if (data.density) {
         gaussian_density(
-            data.m,
-            data.sigma,
-            data.C
+            data.algorithm.m,
+            data.algorithm.sigma,
+            data.algorithm.C
         );
       }
 
-// Connection line between 0,0 and the distribution center
+
       if (data.m_line) {
         line(
             'm_line',
             {
-              x: [0, data.m[0]],
-              y: [0, data.m[1]],
+              x: [0, data.algorithm.m[0]],
+              y: [0, data.algorithm.m[1]],
               color: '#ea580c',
               width: 2
             },
             d3.select('#alg_state'),
             data.scaling
-        )
-
+        ) // Connection line between 0,0 and the distribution center
       }
 
 
@@ -555,10 +455,10 @@ export default {
       }
 
 
-      if (data.population) {
+      if (data.algorithm.population) {
         circle(
             'population',
-            data.population.map(d => {
+            data.algorithm.population.map(d => {
               return {
                 duration: data.duration,
                 transition: data.transition,
@@ -582,7 +482,7 @@ export default {
               center: data.m,
               matrix: math.multiply(data.sigma, data.C)
             },
-            d3.select('#alg_state'),
+            d3.select('#algorithm'),
             data.scaling
         )
       }
@@ -593,15 +493,15 @@ export default {
     ,
     drag(e) {
       if (this.dragging) {
-        this.x -= this.zoom * e.movementX
-        this.y -= this.zoom * e.movementY
+        this.x.value -= this.zoom.value * e.movementX
+        this.y.value -= this.zoom.value * e.movementY
       }
     }
     ,
     wheel: function (event) {
       event.preventDefault();
-      if (event.wheelDelta > 0) this.zoom /= 1.1
-      if (event.wheelDelta < 0) this.zoom *= 1.1
+      if (event.wheelDelta > 0) this.zoom.value /= 1.1
+      if (event.wheelDelta < 0) this.zoom.value *= 1.1
     }
     ,
     startDrag() {

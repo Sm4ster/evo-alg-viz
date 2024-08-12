@@ -1,6 +1,5 @@
 import * as math from "mathjs";
-import {gaussianDensity} from "./functions.js";
-import parentAnimation from "./StateGenerator.js";
+import parentAnimation from "../lib/StateGenerator.js";
 import numeric from 'numeric';
 import MultivariateNormal from "multivariate-normal";
 

@@ -6,8 +6,6 @@ export function parseTransform(transform) {
     const translate = /translate\(([^)]+)\)/.exec(transform);
     const rotate = /rotate\(([^)]+)\)/.exec(transform);
 
-    console.log(rotate)
-
     const result = {};
 
     if (translate) {
@@ -35,28 +33,215 @@ function get_angles(startX, startY, endX, endY) {
 
 }
 
-export function axis(element, data, scaling){
-    // axis
-    element
-        .selectAll('#x_axis')
-        .data(data)
-        .join('line')
-        .attr("id", "x_axis")
-        .attr('y1', -this.height * 10)
-        .attr('y2', this.height * 10)
-        .attr('stroke', 'rgb(211,211,211)')
-        .attr('stroke-width', 2);
+export function viewBox(data, variable){
 
-    element
-        .selectAll('#y_axis')
-        .data(data)
-        .join('line')
-        .attr("id", "y_axis")
-        .attr('x1', -this.width * 10)
-        .attr('x2', this.width * 10)
-        .attr('stroke', 'rgb(211,211,211)')
-        .attr('stroke-width', 2);
+    const interpolate = d3.interpolate(variable.value, data.value);
+    d3.transition()
+        .duration(data.duration)
+        .delay(data.delay)
+        .tween("dataTween", () => {
+            return (t) => {
+                variable.value = interpolate(t);
 
+            };
+        });
+}
+
+export function equations(element, data) {
+    element.selectAll("g")
+        .data(data, d => d.id)
+        .join(
+            enter => enter.append("g")
+                .attr("transform", d => `scale(${d.scaling ?? 1}) rotate(${d.rotation ?? 0}) translate(${d.position[0]} ${d.position[1]})`)
+                .append("foreignObject")
+                .attr("width", "100%")
+                .attr("height", "100%")
+                .html(d => katex.renderToString(d.text))
+                .transition()
+                .attr("opacity", 1),
+            update => {
+                update.transition()
+                    .duration(d => d.duration)
+                    .delay(d => d.delay)
+                    .attr("transform", d => `scale(${d.scaling ?? 1}) rotate(${d.rotation ?? 0}) translate(${d.position[0]} ${d.position[1]})`)
+
+
+                const interpolateNumber = NumberInterpolator("f(5.1)", "f(10)");
+                update.select("foreignObject").transition()
+                    .duration(1000)
+                    .tween("dataTween", function (d) {
+                        const element = this;
+                        return (t) => {
+                            const interpolatedString = interpolateNumber(t);
+                            element.innerHTML = katex.renderToString(String(interpolatedString));
+                        };
+                    });
+
+                // update.select("foreignObject")
+                // .transition()
+                // .duration(500) // Fade in duration
+                // .style("opacity", 0)
+                // .each(function (d) {
+                //   const element = this;
+                //   setTimeout(() => {
+                //     element.innerHTML = katex.renderToString(d.text);
+                //     d3.select(element)
+                //         .transition()
+                //         .duration(200) // Fade in duration
+                //         .style("opacity", 1);
+                //   }, 500)
+                // })
+
+                return update;
+            })
+}
+
+export function graphics(element, data) {
+    element.selectAll("g.graphic")
+        .data(data, d => d.id)
+        .join(
+            enter => enter.append("g")
+                .attr("class", "graphic")
+                .attr("transform", d => `scale(${d.scaling ?? 1}) translate(${d.position[0]} ${d.position[1]})`)
+                .append("g")
+                .attr("transform", d => `rotate(${d.rotation ?? 0}, 50, 50)`)
+                .html(d => d.data)
+                .transition()
+                .attr("opacity", 1),
+            update => {
+                update
+                    .transition()
+                    .attr("transform", d => `scale(${d.scaling ?? 1}) translate(${d.position[0]} ${d.position[1]})`);
+                update.select("g")
+                    // .html(d => d.data)
+                    .transition()
+                    .duration(2000)
+                    .attrTween("transform", function (d) {
+                        const px = 50; // x-coordinate of the arbitrary point
+                        const py = 50; // y-coordinate of the arbitrary point
+
+                        const startAngle = 0;
+                        const endAngle = d.rotation;
+                        return d3.interpolateString(
+                            `translate(${px}, ${py}) rotate(${startAngle}) translate(${-px}, ${-py})`,
+                            `translate(${px}, ${py}) rotate(${endAngle}) translate(${-px}, ${-py})`
+                        );
+                    })
+                return update;
+            }
+        )
+}
+
+export function x_axis(element, data, scaling, width) {
+    element
+        .selectAll('line#line')
+        .data(data.line.value ? [true] : [])
+        .join(
+            enter => enter.append('line')
+                .attr('id', 'line')
+                .attr('x1', -width * 2)
+                .attr('x2', width * 2)
+                .attr('stroke', 'rgb(211,211,211)')
+                .attr('stroke-width', 2)
+                .attr("opacity", 0)
+                .transition().duration(data.line.duration).delay(data.line.delay)
+                .attr("opacity", 1),
+            update => update,
+            exit => exit
+                .transition().duration(data.line.duration).delay(data.line.delay)
+                .attr("opacity", 0).remove());
+
+    element.selectAll('.x_axis_tick')
+        .data(data.ticks.value ? _.range(-100, 100) : [])
+        .join(
+            enter => enter
+                .append('line')
+                .attr("class", "x_axis_tick")
+                .attr('x1', d => d * scaling * 200)
+                .attr('x2', d => d * scaling * 200)
+                .attr('y1', 10)
+                .attr('y2', -10)
+                .attr('stroke', 'gray')
+                .attr('stroke-width', 1)
+                .attr("opacity", 0)
+                .transition().duration(data.ticks.duration).delay(data.ticks.delay)
+                .attr("opacity", 1),
+            update => update
+                .transition().duration(data.ticks.duration).delay(data.ticks.delay)
+                .attr('x1', d => d * scaling * 200)
+                .attr('x2', d => d * scaling * 200)
+                .attr('y1', 10)
+                .attr('y2', -10),
+            exit => exit
+                .transition().duration(data.line.duration).delay(data.line.delay)
+                .attr("opacity", 0).remove()
+        )
+}
+
+
+export function y_axis(element, data, scaling, height) {
+    element
+        .selectAll('line#line')
+        .data(data.line.value ? [true] : [])
+        .join(
+            enter => enter.append('line')
+                .attr("id", "line")
+                .attr('y1', -height * 10)
+                .attr('y2', height * 10)
+                .attr('stroke', 'rgb(211,211,211)')
+                .attr('stroke-width', 2)
+                .attr("opacity", 0)
+                .transition().duration(data.line.duration).delay(data.line.delay)
+                .attr("opacity", 1),
+            update => update,
+            exit => exit
+                .transition().duration(data.line.duration).delay(data.line.delay)
+                .attr("opacity", 0).remove());
+
+
+    element.selectAll('.y_axis_tick')
+        .data(data.ticks.value ? _.range(-100, 100) : [])
+        .join(
+            enter => enter
+                .append('line')
+                .attr("class", "y_axis_tick")
+                .attr('y1', d => d * scaling * 200)
+                .attr('y2', d => d * scaling * 200)
+                .attr('x1', 10)
+                .attr('x2', -10)
+                .attr('stroke', 'gray')
+                .attr('stroke-width', 1)
+                .attr('fill', 'none') .attr("opacity", 0)
+                .transition().duration(data.ticks.duration).delay(data.ticks.delay)
+                .attr("opacity", 1),
+            update => update
+                .transition().duration(data.ticks.duration).delay(data.ticks.delay)
+                .attr('y1', d => d * scaling * 200)
+                .attr('y2', d => d * scaling * 200)
+                .attr('x1', 10)
+                .attr('x2', -10),
+            exit => exit
+                .transition().duration(data.ticks.duration).delay(data.ticks.delay)
+                .attr("opacity", 0).remove()
+        )
+
+
+}
+
+export function centerpoint(element, data) {
+    element
+        .selectAll("#centerpoint")
+        .data([true])
+        .join(
+            enter => enter.append("circle")
+                .attr("id", "centerpoint")
+                .attr("cx", 0)
+                .attr("cy", 0)
+                .attr("r", 1)
+                .attr("stroke", "black")
+                .attr("stroke-width", this.height / 600),
+            update => update.transition().attr("r", 1)
+        )
 }
 
 export function levelsets(element, data, scaling) {
@@ -81,6 +266,25 @@ export function levelsets(element, data, scaling) {
                 .attr('ry', d => d * scaling * Math.sqrt(eigen[1].value) * 50)
                 .attr("transform", d => `rotate(${angle})`)
         )
+}
+
+
+export function single_level(element, level, scaling) {
+    // one level
+    element
+        .selectAll('#one_level')
+        .data([level])
+        .join(
+            enter => enter.append('circle')
+                .attr("id", "one_level")
+                .attr('stroke', 'black')
+                .attr('stroke-width', 2)
+                .attr('fill', 'none')
+                .attr('r', d => d * scaling * 200),
+            update => update.transition().duration(1000)
+                .attr('r', d => d * scaling * 200)
+        )
+
 }
 
 
@@ -333,7 +537,9 @@ export function ellipse(tag, data, element, scaling) {
 }
 
 import * as d3hb from 'd3-hexbin'
-export function gaussian_density(center, variance, covariance){
+import katex from "katex";
+
+export function gaussian_density(center, variance, covariance) {
     // density
     const grid = [];
     const step = 3;
@@ -373,7 +579,6 @@ export function gaussian_density(center, variance, covariance){
                     return color(d3.mean(d, p => p[2]))
                 }),
             update => update.transition()
-                .attr("class", "hexagon")
                 .attr("d", hexbin.hexagon())
                 .attr("transform", d => `translate(${d.x + center[0] * 200},${-(d.y + center[1] * 200)})`)
                 .attr("stroke", d => {
@@ -382,7 +587,9 @@ export function gaussian_density(center, variance, covariance){
                 .attr("stroke-width", 1)
                 .attr("fill", d => {
                     return color(d3.mean(d, p => p[2]))
-                })
+                }),
+            exit => exit.transition()
+                .attr("opacity", 0)
         )
 
 }
@@ -424,7 +631,6 @@ export function gaussianDensity(point, mean, covariance) {
 }
 
 
-
 export function NumberInterpolator(startString, endString) {
     // Extract the number from the start and end strings using a regex
     const startMatch = startString.match(/-?\d+(\.\d+)?/);
@@ -444,7 +650,7 @@ export function NumberInterpolator(startString, endString) {
     // Create a D3 interpolator for these numbers
     const numberInterpolator = d3.interpolateNumber(startNumber, endNumber);
 
-    return function(t) {
+    return function (t) {
         // Interpolate the number
         const interpolatedNumber = numberInterpolator(t);
 

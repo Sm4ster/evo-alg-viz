@@ -1,6 +1,6 @@
 import * as math from "mathjs";
-import {decimals} from "./misc/functions.js";
-import parentAnimation from "./StateGenerator.js";
+import {decimals} from "./lib/functions.js";
+import parentAnimation from "./lib/StateGenerator.js";
 import numeric from 'numeric';
 import MultivariateNormal from "multivariate-normal";
 import _ from "lodash";

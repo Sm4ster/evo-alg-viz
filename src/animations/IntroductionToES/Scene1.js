@@ -1,17 +1,20 @@
-import parentAnimation from "./StateGenerator.js";
+import parentAnimation from "../lib/StateGenerator.js";
 
-import knob from './knob-svgrepo-com.svg?raw'
-import machine from './machinery-svgrepo-com.svg?raw'
+import knob from './graphics/knob-svgrepo-com.svg?raw'
+import machine from './graphics/machinery-svgrepo-com.svg?raw'
 import _ from 'lodash';
 
 export default class Scene1 extends parentAnimation {
 
-    start_state = {}
+    start_state = {
+        y_axis: true,
+        x_axis: true,
+    }
 
     steps = [
         (prev_state) => {
             return {
-                formula: [
+                equations: [
                     {
                         position: [-32, 12],
                         scaling: 2.5,
@@ -19,7 +22,7 @@ export default class Scene1 extends parentAnimation {
                         text: "5"
                     }
                 ],
-                svg: [
+                graphics: [
                     {
                         id: "knob",
                         position: [-50, -50],
@@ -45,24 +48,24 @@ export default class Scene1 extends parentAnimation {
                 scaling: 1
             }
         },
-        (prev_state) => {
-        let svg = _.cloneDeep(prev_state.svg);
-        svg.find(d => d.id === "knob2").rotation = 45
-            console.log(svg)
-            return {
-                formula: [
-                    {
-                        position: [-45, 12],
-                        scaling: 2.5,
-                        id: "number",
-                        text: "x"
-                    }
-                ],
-                zoom: .5,
-                x: 50,
-                scaling: 5,
-                svg: svg
-            }
-        }
+        // (prev_state) => {
+        // let svg = _.cloneDeep(prev_state.svg);
+        // svg.find(d => d.id === "knob2").rotation = 45
+        //     console.log(svg)
+        //     return {
+        //         formula: [
+        //             {
+        //                 position: [-45, 12],
+        //                 scaling: 2.5,
+        //                 id: "number",
+        //                 text: "x"
+        //             }
+        //         ],
+        //         zoom: .5,
+        //         x: 50,
+        //         scaling: 5,
+        //         svg: svg
+        //     }
+        // }
     ]
 }

@@ -1,22 +1,34 @@
 import * as math from "mathjs";
-import {decimals} from "./misc/functions.js";
-import parentAnimation from "./StateGenerator.js";
+import {decimals} from "../lib/functions.js";
+import parentAnimation from "../lib/StateGenerator.js";
 
 export default class NormalForm extends parentAnimation {
 
     start_state = {
-        show_C: false,
+
         highlight_row: 0,
         latex: [
-            {class: "", string: "0. \\ A \\leftarrow [v_1 \\, v_2] \\textit{ where } \\quad C v_i = \\lambda_i v_i, \\quad v_i = \\frac{v_i}{\\|v_i\\|} \\text{Eigendecomposition} \\;"},
+            {
+                class: "",
+                string: "0. \\ A \\leftarrow [v_1 \\, v_2] \\textit{ where } \\quad C v_i = \\lambda_i v_i, \\quad v_i = \\frac{v_i}{\\|v_i\\|} \\text{Eigendecomposition} \\;"
+            },
             {class: "", string: "1. C \\gets A^T C A"},
             {class: "", string: "2. m \\gets A^T m"},
             {class: "", string: "3. m_{(1)} < 0"},
-            {class: "", string: "4. m \\gets \\begin{pmatrix}\\scalebox{0.4}[1.0]{\\( - \\)}1 & 0 \\\\ 0 & 1 \\end{pmatrix} \\cdot m"},
+            {
+                class: "",
+                string: "4. m \\gets \\begin{pmatrix}\\scalebox{0.4}[1.0]{\\( - \\)}1 & 0 \\\\ 0 & 1 \\end{pmatrix} \\cdot m"
+            },
             {class: "", string: "3. m_{(2)} < 0"},
-            {class: "", string: "4. m \\gets \\begin{pmatrix}1 & 0 \\\\ 0 & \\scalebox{0.4}[1.0]{\\( - \\)}1 \\end{pmatrix} \\cdot m"},
+            {
+                class: "",
+                string: "4. m \\gets \\begin{pmatrix}1 & 0 \\\\ 0 & \\scalebox{0.4}[1.0]{\\( - \\)}1 \\end{pmatrix} \\cdot m"
+            },
             {class: "", string: "3. \\m_{(1)} < 0"},
-            {class: "", string: "4. \\m \\gets \\begin{pmatrix}\\scalebox{0.4}[1.0]{\\( - \\)}1 & 0 \\\\ 0 & 1 \\end{pmatrix} \\cdot m"},
+            {
+                class: "",
+                string: "4. \\m \\gets \\begin{pmatrix}\\scalebox{0.4}[1.0]{\\( - \\)}1 & 0 \\\\ 0 & 1 \\end{pmatrix} \\cdot m"
+            },
             {class: "", string: "5. \\m \\gets \\frac{m}{|m|}"},
             {class: "", string: "6. \\qquad m_{t+1} \\leftarrow m_t"},
             {class: "", string: "7. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha^{-1/4}"},
@@ -25,7 +37,15 @@ export default class NormalForm extends parentAnimation {
 
     steps = [
         function (prev_state) {
-            return {x_axis: true, y_axis: true}
+            return {
+                viewbox: {x: 50, y:100, zoom: 0.9, delay: 2000},
+                graph:
+                    {
+                        duration: 200,
+                        x_axis: {line: true, ticks: true},
+                        y_axis: {line: true, ticks: {value: true, duration: 2000, delay: 1000}}
+                    }
+            }
         },
         function (prev_state) {
             let eigen = math.eigs(prev_state.C).eigenvectors
@@ -36,7 +56,7 @@ export default class NormalForm extends parentAnimation {
                     eigen[0].value * eigen[0].vector[0])
                 * 180 / Math.PI;
 
-            return {rotation: -rotation_angle }
+            return {rotation: -rotation_angle}
         },
         function (prev_state) {
             let eigen = math.eigs(prev_state.C).eigenvectors
@@ -51,7 +71,7 @@ export default class NormalForm extends parentAnimation {
 
             let rotation_bias = -1;
 
-            if(C[0][1] >= 0 && C[0][0] > C[1][1]) rotation_bias = false
+            if (C[0][1] >= 0 && C[0][0] > C[1][1]) rotation_bias = false
 
             return {m, C, rotation: 0, transition: "rotation", rotation_bias}
         },
@@ -91,8 +111,8 @@ export default class NormalForm extends parentAnimation {
             let C = math.multiply(math.multiply(math.transpose(A), prev_state.C), A)
 
 
-            if(prev_state.m[0] < 0 && prev_state.m[1] < 0 && prev_state.C[0][0] > prev_state.C[1][1]) rotation_bias = false
-            if(prev_state.m[0] >= 0 && prev_state.m[1] < 0 && C[0][0] > C[1][1]) rotation_bias = false
+            if (prev_state.m[0] < 0 && prev_state.m[1] < 0 && prev_state.C[0][0] > prev_state.C[1][1]) rotation_bias = false
+            if (prev_state.m[0] >= 0 && prev_state.m[1] < 0 && C[0][0] > C[1][1]) rotation_bias = false
 
 
             return {m, C, transition, rotation: 0, rotation_bias, duration: 2000}
@@ -130,10 +150,14 @@ export default class NormalForm extends parentAnimation {
                 C = math.multiply(math.multiply(axis_swap, C), math.transpose(axis_swap))
             }
 
-            return {m, C, population: {delay: 200, points:[[1.1,0.9],[1,1],[1.1,1],[0.9,1],[0.9,1.1]]},
-                latex: [{class: "", string:
-                    `\\alpha = ${decimals(Math.acos(m[0]))} \\quad \\kappa = ${decimals(C[0][0])} \\quad \\sigma = ${decimals(prev_state.sigma)}`},
-                ]}
+            return {
+                m, C, population: {delay: 200, points: [[1.1, 0.9], [1, 1], [1.1, 1], [0.9, 1], [0.9, 1.1]]},
+                latex: [{
+                    class: "", string:
+                        `\\alpha = ${decimals(Math.acos(m[0]))} \\quad \\kappa = ${decimals(C[0][0])} \\quad \\sigma = ${decimals(prev_state.sigma)}`
+                },
+                ]
+            }
         },
     ]
 }
