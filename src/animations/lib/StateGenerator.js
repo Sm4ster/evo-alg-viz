@@ -13,6 +13,7 @@ export default class {
         duration: 1000,
         delay: 0,
         transition: "linear", // linear, rotation
+        rotation_bias: false,
         //
         // equations: [],
         // graphics: [],
@@ -51,11 +52,10 @@ export default class {
             scaling: 1,
 
             // data
-            // m: [0, 0],
-            // C: [[1, 0], [0, 1]],
+            m: [0, 0],
+            C: [[1, 0.5], [0.5, 1]],
             sigma: 1,
-            // population: [],
-            transition: 'rotation',
+            population: [],
         }
     }
 
@@ -71,21 +71,25 @@ export default class {
     }
 
     set_start(state) {
-        this.start_state = {...this._start_state, ...this.start_state, ...state}
+        this._start_state.algorithm.m = state.m
+        // this.start_state = {...this._start_state, ...this.start_state, ...state}
         return this.fill_step_cache()
     }
 
 
     fill_step_cache() {
-        let step_cache = [];
-        let state_cache = [];
+        const attributes = ['duration', 'delay', "transition", "rotation_bias"]
 
-        let cur_state = {...this._start_state, ...this.start_state}
-        let exp_state = expandValues(_.cloneDeep(cur_state), ['duration', 'delay'])
+        let step_cache = [];
+
+        let cur_state = _.merge({}, this._start_state, this.start_state)
+        let exp_state = expandValues(_.cloneDeep(cur_state), attributes)
         exp_state = inheritAttributes(exp_state, {
+            rotation_bias: false,
             delay: cur_state.delay,
-            duration: cur_state.duration
-        }, ['duration', 'delay']);
+            duration: cur_state.duration,
+            transition: "linear"
+        }, attributes);
 
         step_cache.push(exp_state)
 
@@ -93,8 +97,6 @@ export default class {
             cur_state = _.merge({},
                 cur_state,
                 {
-                    transition: "linear",
-                    rotation_bias: false,
                     rotation_angle: false
                 },
                 this.steps[cur_step](cur_state));
@@ -102,11 +104,13 @@ export default class {
 
 
             // fill everything with delay and duration
-            exp_state = expandValues(_.cloneDeep(cur_state), ['duration', 'delay'])
+            exp_state = expandValues(_.cloneDeep(cur_state), attributes)
             exp_state = inheritAttributes(exp_state, {
+                rotation_bias: false,
                 delay: cur_state.delay,
-                duration: cur_state.duration
-            }, ['duration', 'delay']);
+                duration: cur_state.duration,
+                transition: "linear"
+            }, attributes);
 
             step_cache.push(exp_state)
         }

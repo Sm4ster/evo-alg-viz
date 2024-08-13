@@ -187,7 +187,7 @@ export default {
   components: {RadioSelect, Toggle, ParameterButton, Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot},
   data() {
     return {
-      state_generator_id: 2,
+      state_generator_id: 0,
 
       steps: [],
       start_state: "manual",
@@ -371,21 +371,12 @@ export default {
       this.params.sigma = this.$_.random(1, 5, true)
     },
     update(data) {
-      console.log(data)
+      console.log("data:", data)
       // zooming and moving
-      viewBox(data.viewbox.x,  this.x)
-      viewBox(data.viewbox.y,  this.y)
+      viewBox(data.viewbox.x, this.x)
+      viewBox(data.viewbox.y, this.y)
       viewBox(data.viewbox.zoom, this.zoom)
 
-      // const interpolate = d3.interpolate(this.zoom, data.viewbox.zoom.value);
-      // d3.transition()
-      //     .duration(data.viewbox.zoom.duration)
-      //     .delay(data.viewbox.zoom.delay)
-      //     .tween("dataTween", () => {
-      //       return (t) => {
-      //         this.zoom = interpolate(t);
-      //       };
-      //     });
 
       // // graphics and icons
       // graphics(d3.select("#graphics"), data.graphics)
@@ -395,10 +386,16 @@ export default {
 
 
       // rotation of the graph and algorithm
-      d3.select("#graph").transition().duration(data.duration)
+      d3.select("#graph")
+          .transition()
+          .duration(data.graph.rotation.duration)
+          .delay(data.graph.rotation.delay)
           .attr("transform", `rotate(${data.graph.rotation.value})`);
 
-      d3.select("#algorithm").transition().duration(data.duration)
+      d3.select("#algorithm")
+          .transition()
+          .duration(data.graph.rotation.duration)
+          .delay(data.graph.rotation.delay)
           .attr("transform", `rotate(${data.algorithm.rotation.value})`);
 
 
@@ -439,20 +436,34 @@ export default {
       }
 
 
-      if (data.m_dot) {
-        circle(
-            'm_dot',
-            {
-              delay: 0,
-              duration: data.duration,
-              transition: data.transition,
-              coords: data.m,
-              r: 2,
-              color: '#ea580c'
-            },
-            d3.select('#alg_state'),
-            data.scaling)
-      }
+      circle(
+          d3.select('#algorithm'),
+          data.algorithm.m_dot.value ? {
+            duration: data.algorithm.m_dot.duration,
+            delay: data.algorithm.m_dot.delay,
+            transition: data.algorithm.m_dot.transition,
+            coords: data.algorithm.m.value,
+            r: 2,
+            color: '#ea580c'
+          } : {},
+          'm_dot',
+          data.algorithm.scaling.value
+      )
+
+
+      ellipse(
+          d3.select('#algorithm'),
+          data.algorithm.ellipse.value ?
+          {
+            duration: data.algorithm.ellipse.duration,
+            rotation_bias: data.algorithm.ellipse.rotation_bias,
+            transition: data.algorithm.ellipse.transition,
+            center: data.algorithm.m.value,
+            matrix: math.multiply(data.algorithm.sigma.value, data.algorithm.C.value)
+          } : {},
+          'std_dev',
+          data.algorithm.scaling.value
+      )
 
 
       if (data.algorithm.population) {
@@ -467,22 +478,6 @@ export default {
               }
             }),
             d3.select('#population'),
-            data.scaling
-        )
-      }
-
-
-      if (data.ellipse) {
-        ellipse(
-            'std_dev',
-            {
-              duration: data.duration,
-              rotation_bias: data.rotation_bias,
-              transition: data.transition,
-              center: data.m,
-              matrix: math.multiply(data.sigma, data.C)
-            },
-            d3.select('#algorithm'),
             data.scaling
         )
       }

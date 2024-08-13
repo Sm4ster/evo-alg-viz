@@ -12,6 +12,10 @@ window.numeric = numeric;
 export default class OnePlusOneES extends parentAnimation {
 
     start_state = {
+        algorithm: {
+            m_dot: true,
+            ellipse: true,
+        },
         show_C: false,
         highlight_row: 0,
         latex: [
@@ -28,39 +32,42 @@ export default class OnePlusOneES extends parentAnimation {
 
     steps = [
         (prev_state) => {
-            let distribution = MultivariateNormal(prev_state.m, math.multiply(prev_state.sigma, prev_state.C));
+            let distribution = MultivariateNormal(prev_state.algorithm.m, math.multiply(prev_state.algorithm.sigma, prev_state.algorithm.C));
             return {
-                population: [{delay: 0, r: 5, color: "gray", coords: distribution.sample()}],
+                algorithm: {
+                    population: [{delay: 0, r: 5, color: "gray", coords: distribution.sample()}],
+                },
+
                 highlight_row: 1,
             }
         },
-        (prev_state) => {
-            return {
-                highlight_row: 2,
-                population: [{
-                    delay: 0,
-                    r: 5,
-                    color: this.fitness(prev_state.population[0].coords) > this.fitness(prev_state.m) ? "red" : "green",
-                    coords: prev_state.population[0].coords
-                }]
-            }
-        },
-        (prev_state) => {
-            if (this.fitness(prev_state.population[0].coords) <= this.fitness(prev_state.m)) {
-                return {highlight_row: 3, m: prev_state.population[0].coords}
-            } else {
-                return {highlight_row: 6}
-            }
-
-        },
-        (prev_state) => {
-            let alpha = 3 / 2;
-            if (this.fitness(prev_state.population[0].coords) > this.fitness(prev_state.m)) {
-                return {highlight_row: 7, sigma: prev_state.sigma * (1 / Math.pow(alpha, 1 / 4))}
-            } else {
-                return {highlight_row: 4, sigma: prev_state.sigma * alpha}
-            }
-
-        },
+        // (prev_state) => {
+        //     return {
+        //         highlight_row: 2,
+        //         population: [{
+        //             delay: 0,
+        //             r: 5,
+        //             color: this.fitness(prev_state.population[0].coords) > this.fitness(prev_state.m) ? "red" : "green",
+        //             coords: prev_state.population[0].coords
+        //         }]
+        //     }
+        // },
+        // (prev_state) => {
+        //     if (this.fitness(prev_state.population[0].coords) <= this.fitness(prev_state.m)) {
+        //         return {highlight_row: 3, m: prev_state.population[0].coords}
+        //     } else {
+        //         return {highlight_row: 6}
+        //     }
+        //
+        // },
+        // (prev_state) => {
+        //     let alpha = 3 / 2;
+        //     if (this.fitness(prev_state.population[0].coords) > this.fitness(prev_state.m)) {
+        //         return {highlight_row: 7, sigma: prev_state.sigma * (1 / Math.pow(alpha, 1 / 4))}
+        //     } else {
+        //         return {highlight_row: 4, sigma: prev_state.sigma * alpha}
+        //     }
+        //
+        // },
     ]
 }
