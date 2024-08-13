@@ -11,63 +11,74 @@ window.numeric = numeric;
 
 export default class OnePlusOneES extends parentAnimation {
 
+    app_defaults = {
+        start_state: "prev_state"
+    }
+
     start_state = {
-        algorithm: {
+        canvas: {
             m_dot: true,
             ellipse: true,
+            x_axis: {
+                line: true,
+                ticks: false,
+                tick_numbers: false
+            },
+            y_axis: {
+                line: true,
+                ticks: false,
+                tick_numbers: false
+            },
+            centerpoint: true,
+            levelsets: true,
         },
-        show_C: false,
-        highlight_row: 0,
-        latex: [
-            {class: "", string: "0. \\ \\textbf{for} \\ t=1,2,..., \\textit{until satisfied} \\ \\textbf{do}"},
-            {class: "", string: "1. \\quad x_t \\sim m_t + \\sigma_t \\cdot \\mathcal{N}(0, I)"},
-            {class: "", string: "2. \\quad \\textbf{if} \\ f(x_t) \\leq f(m_t) \\ \\textbf{then}"},
-            {class: "", string: "3. \\qquad m_{t+1} \\leftarrow x_t"},
-            {class: "", string: "4. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha"},
-            {class: "", string: "5. \\quad \\textbf{else}"},
-            {class: "", string: "6. \\qquad m_{t+1} \\leftarrow m_t"},
-            {class: "", string: "7. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha^{-1/4}"},
-        ]
+
+
+
+        // latex: [
+        //     {class: "", string: "0. \\ \\textbf{for} \\ t=1,2,..., \\textit{until satisfied} \\ \\textbf{do}"},
+        //     {class: "", string: "1. \\quad x_t \\sim m_t + \\sigma_t \\cdot \\mathcal{N}(0, I)"},
+        //     {class: "", string: "2. \\quad \\textbf{if} \\ f(x_t) \\leq f(m_t) \\ \\textbf{then}"},
+        //     {class: "", string: "3. \\qquad m_{t+1} \\leftarrow x_t"},
+        //     {class: "", string: "4. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha"},
+        //     {class: "", string: "5. \\quad \\textbf{else}"},
+        //     {class: "", string: "6. \\qquad m_{t+1} \\leftarrow m_t"},
+        //     {class: "", string: "7. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha^{-1/4}"},
+        // ]
     }
 
     steps = [
-        (prev_state) => {
-            let distribution = MultivariateNormal(prev_state.algorithm.m, math.multiply(prev_state.algorithm.sigma, prev_state.algorithm.C));
-            return {
-                algorithm: {
-                    population: [{delay: 0, r: 5, color: "gray", coords: distribution.sample()}],
-                },
+        ({algorithm}) => {
+            let distribution = MultivariateNormal(algorithm.m, math.multiply(algorithm.sigma, algorithm.C));
 
-                highlight_row: 1,
-            }
+            algorithm.population = [{r: 5, color: "gray", coords: distribution.sample()}]
         },
-        // (prev_state) => {
-        //     return {
-        //         highlight_row: 2,
-        //         population: [{
-        //             delay: 0,
-        //             r: 5,
-        //             color: this.fitness(prev_state.population[0].coords) > this.fitness(prev_state.m) ? "red" : "green",
-        //             coords: prev_state.population[0].coords
-        //         }]
-        //     }
-        // },
-        // (prev_state) => {
-        //     if (this.fitness(prev_state.population[0].coords) <= this.fitness(prev_state.m)) {
-        //         return {highlight_row: 3, m: prev_state.population[0].coords}
-        //     } else {
-        //         return {highlight_row: 6}
-        //     }
-        //
-        // },
-        // (prev_state) => {
-        //     let alpha = 3 / 2;
-        //     if (this.fitness(prev_state.population[0].coords) > this.fitness(prev_state.m)) {
-        //         return {highlight_row: 7, sigma: prev_state.sigma * (1 / Math.pow(alpha, 1 / 4))}
-        //     } else {
-        //         return {highlight_row: 4, sigma: prev_state.sigma * alpha}
-        //     }
-        //
-        // },
+        ({algorithm}) => {
+            algorithm.population =  [{
+                delay: 0,
+                r: 5,
+                color: this.fitness(algorithm.population[0].coords) > this.fitness(algorithm.m) ? "red" : "green",
+                coords: algorithm.population[0].coords
+            }]
+        },
+        ({algorithm}) => {
+            if (this.fitness(algorithm.population[0].coords) <= this.fitness(algorithm.m)) {
+                algorithm.m = algorithm.population[0].coords;
+                algorithm.population[0].r = 0;
+            } else {
+                {highlight_row: 6}
+            }
+
+        },
+        ({algorithm}) => {
+            let alpha = 3 / 2;
+            if (this.fitness(algorithm.population[0].coords) <= this.fitness(algorithm.m)) {
+                algorithm.sigma = algorithm.sigma * alpha
+            } else {
+                algorithm.sigma = algorithm.sigma * (1 / Math.pow(alpha, 1 / 4))
+                {highlight_row: 4}
+            }
+
+        },
     ]
 }

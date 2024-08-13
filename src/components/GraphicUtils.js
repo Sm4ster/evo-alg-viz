@@ -42,7 +42,6 @@ export function viewBox(data, variable) {
         .tween("dataTween", () => {
             return (t) => {
                 variable.value = interpolate(t);
-
             };
         });
 }
@@ -239,7 +238,7 @@ export function centerpoint(element, data) {
                 .attr("cy", 0)
                 .attr("r", 1)
                 .attr("stroke", "black")
-                .attr("stroke-width", this.height / 600),
+                .attr("stroke-width", 2),
             update => update.transition().attr("r", 1)
         )
 }
@@ -392,6 +391,7 @@ export function circle(element, data, tag, scaling) {
         data = [data]
     }
 
+
     element.selectAll((tag_type === "id" ? "#" : ".") + tag)
         .data(data)
         .join(
@@ -471,12 +471,13 @@ export function ellipse(element, data, tag, scaling) {
         return {...e, eigen, rotation_angle, rotation_bias}
     })
 
+    console.log(data)
     // in case the rotation needs to be done from the other side, rotate 180 deg
     element.selectAll((tag_type === "id" ? "#" : ".") + tag)
         .data(data)
         .select("ellipse")
-        .attr('transform', d => `rotate(
-                ${parseTransform(element.select('#std_dev').select("ellipse").attr('transform')).rotate + (d.rotation_bias * 180)})`)
+        // .attr("transform", d => "rotate(33)")
+        .attr('transform', d => `rotate(${parseTransform(element.select('#std_dev').select("ellipse").attr('transform')).rotate + (d.rotation_bias * 180)})`)
 
 
     element.selectAll((tag_type === "id" ? "#" : ".") + tag)
@@ -525,10 +526,10 @@ export function ellipse(element, data, tag, scaling) {
                             };
                         }
                     });
-          // console.log(update.select("ellipse#ellipse"))
+                console.log()
                 update.select("ellipse")
                     .transition().duration(d => d.duration)
-                    .attr('transform', d => {console.log(-d.rotation_angle); return `rotate(${-d.rotation_angle})`})
+                    .attr('transform', d => `rotate(${-d.rotation_angle})`)
                     .attr('rx', d => Math.sqrt(d.eigen[0].value) * scaling * 200)
                     .attr('ry', d => Math.sqrt(d.eigen[1].value) * scaling * 200)
 

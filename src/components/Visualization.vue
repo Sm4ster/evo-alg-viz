@@ -168,7 +168,8 @@ import {
   y_axis,
   graphics,
   equations,
-  viewBox
+  viewBox,
+  centerpoint
 } from "./GraphicUtils.js";
 
 
@@ -225,6 +226,7 @@ export default {
   },
   watch: {
     state_generator_id() {
+      this.start_state = this.state_generator.app_defaults.start_state;
       this.steps = this.state_generator.set_start({
         m: [...this.params.m],
         C: [[this.params.A, this.params.B], [this.params.B, this.params.C]],
@@ -238,11 +240,11 @@ export default {
         this.update_flag = false;
         if (this.start_state === "random") this.set_random_start();
         if (this.start_state === "prev_state") {
-          this.params.m = [...this.steps[this.steps.length - 1].m]
-          this.params.A = this.steps[this.steps.length - 1].C[0][0]
-          this.params.B = this.steps[this.steps.length - 1].C[1][0]
-          this.params.C = this.steps[this.steps.length - 1].C[1][1]
-          this.params.sigma = this.steps[this.steps.length - 1].sigma
+          this.params.m = [...this.steps[this.steps.length - 1].algorithm.m]
+          this.params.A = this.steps[this.steps.length - 1].algorithm.C[0][0]
+          this.params.B = this.steps[this.steps.length - 1].algorithm.C[1][0]
+          this.params.C = this.steps[this.steps.length - 1].algorithm.C[1][1]
+          this.params.sigma = this.steps[this.steps.length - 1].algorithm.sigma
         }
         this.steps = this.state_generator.set_start({
           m: [...this.params.m],
@@ -304,6 +306,7 @@ export default {
     this.y = ref(0);
     this.zoom = ref(1);
 
+    this.start_state = this.state_generator.app_defaults.start_state;
     this.steps = this.state_generator.set_start({
       m: [...this.params.m],
       C: [[this.params.A, this.params.B], [this.params.B, this.params.C]],
@@ -378,34 +381,34 @@ export default {
       viewBox(data.viewbox.zoom, this.zoom)
 
 
-      // // graphics and icons
-      // graphics(d3.select("#graphics"), data.graphics)
-      //
-      // // math and formulas
-      // equations(d3.select("#equations"), data.equations)
+      // graphics and icons
+      graphics(d3.select("#graphics"), data.graphics)
+
+      // math and formulas
+      equations(d3.select("#equations"), data.equations)
 
 
       // rotation of the graph and algorithm
       d3.select("#graph")
           .transition()
-          .duration(data.graph.rotation.duration)
-          .delay(data.graph.rotation.delay)
-          .attr("transform", `rotate(${data.graph.rotation.value})`);
+          .duration(data.viewbox.graph_rotation.duration)
+          .delay(data.viewbox.graph_rotation.delay)
+          .attr("transform", `rotate(${data.viewbox.graph_rotation.value})`);
 
       d3.select("#algorithm")
           .transition()
-          .duration(data.graph.rotation.duration)
-          .delay(data.graph.rotation.delay)
-          .attr("transform", `rotate(${data.algorithm.rotation.value})`);
+          .duration(data.viewbox.algorithm_rotation.duration)
+          .delay(data.viewbox.algorithm_rotation.delay)
+          .attr("transform", `rotate(${data.viewbox.algorithm_rotation.value})`);
 
 
       // axis
-      x_axis(d3.select("#x_axis"), data.graph.x_axis, data.graph.scaling.value, this.width)
-      y_axis(d3.select("#y_axis"), data.graph.y_axis, data.graph.scaling.value, this.height)
+      x_axis(d3.select("#x_axis"), data.canvas.x_axis, data.viewbox.scaling.value, this.width)
+      y_axis(d3.select("#y_axis"), data.canvas.y_axis, data.viewbox.scaling.value, this.height)
 
       // centerpoint and levelsets
-      if (data.centerpoint) centerpoint(d3.select('#levelsets'))
-      if (data.levelsets) levelsets(d3.select('#levelsets'), {matrix: data.Q,}, data.scaling)
+      if (data.canvas.centerpoint) centerpoint(d3.select('#levelsets'))
+      if (data.canvas.levelsets) levelsets(d3.select('#levelsets'), {matrix: data.algorithm.Q,}, data.viewbox.scaling.value)
 
       // one level
       single_level(d3.select("levelsets"), 1, data.scaling)
@@ -438,37 +441,38 @@ export default {
 
       circle(
           d3.select('#algorithm'),
-          data.algorithm.m_dot.value ? {
-            duration: data.algorithm.m_dot.duration,
-            delay: data.algorithm.m_dot.delay,
-            transition: data.algorithm.m_dot.transition,
-            coords: data.algorithm.m.value,
+          data.canvas.m_dot.value ? {
+            duration: data.canvas.m_dot.duration,
+            delay: data.canvas.m_dot.delay,
+            transition: data.canvas.m_dot.transition,
+            coords: data.algorithm.m,
             r: 2,
             color: '#ea580c'
           } : {},
           'm_dot',
-          data.algorithm.scaling.value
+          data.viewbox.scaling.value
       )
 
 
       ellipse(
           d3.select('#algorithm'),
-          data.algorithm.ellipse.value ?
-          {
-            duration: data.algorithm.ellipse.duration,
-            rotation_bias: data.algorithm.ellipse.rotation_bias,
-            transition: data.algorithm.ellipse.transition,
-            center: data.algorithm.m.value,
-            matrix: math.multiply(data.algorithm.sigma.value, data.algorithm.C.value)
-          } : {},
+          data.canvas.ellipse.value ?
+              {
+                duration: data.canvas.ellipse.duration,
+                rotation_bias: data.canvas.ellipse.rotation_bias,
+                transition: data.canvas.ellipse.transition,
+                center: data.algorithm.m,
+                matrix: math.multiply(data.algorithm.sigma, data.algorithm.C)
+              } : {},
           'std_dev',
-          data.algorithm.scaling.value
+          data.viewbox.scaling.value
       )
 
 
       if (data.algorithm.population) {
         circle(
-            'population',
+            d3.select('#population'),
+
             data.algorithm.population.map(d => {
               return {
                 duration: data.duration,
@@ -477,8 +481,8 @@ export default {
                 ...d
               }
             }),
-            d3.select('#population'),
-            data.scaling
+            'population',
+            data.viewbox.scaling.value
         )
       }
     },
