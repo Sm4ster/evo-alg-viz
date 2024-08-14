@@ -412,7 +412,7 @@ export default {
 
 
       // algorithm state
-      if (data.density) {
+      if (data.canvas.density.value) {
         gaussian_density(
             data.algorithm.m,
             data.algorithm.sigma,

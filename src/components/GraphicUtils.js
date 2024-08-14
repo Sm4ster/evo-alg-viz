@@ -47,22 +47,31 @@ export function viewBox(data, variable) {
 }
 
 export function equations(element, data) {
-    console.log(data)
+
     element.selectAll("g")
         .data(data, d => d.id)
         .join(
             enter => {
                 let el = enter.append("g")
                     .attr("id", d => d.id)
-                    .attr("class", d => "text-white whitespace-nowrap " + d.class)
-                    .attr("transform", d => `scale(${d.scaling.value ?? 1}) rotate(${d.rotation ?? 0}) translate(${d.position[0]} ${d.position[1]})`)
+                    .attr("transform", d => `scale(${1 ?? 1}) rotate(${d.rotation ?? 0}) translate(${d.position[0]} ${d.position[1]})`)
                     .append("foreignObject")
+                    .attr("class", "bg-black text-white whitespace-nowrap bg-opacity-[0.7]")
                     .html(d => katex.renderToString(d.value))
+                    .each(function(d) {
+                        let bbox = this.firstElementChild
+
+                        console.log(d, this,this.firstElementChild.getBoundingClientRect(), getComputedStyle(this.firstElementChild))
+                    })
                     .transition()
                     .attr("opacity", 1)
 
-                let bbox = el.node().firstElementChild.getBoundingClientRect()
-                el.attr("width", bbox.width).attr("height", bbox.height)
+                // let bbox = el.node().firstElementChild.getBoundingClientRect()
+                // console.log(el.node())
+                // console.log(bbox)
+                // enter.select(d => `g#${d.id}`)
+                //     .attr("width", d => bbox.width / d.scaling.value)
+                //     .attr("height", d => bbox.height / d.scaling.value)
             },
             update => {
                 let el = update.transition()
@@ -480,7 +489,7 @@ export function ellipse(element, data, tag, scaling) {
         return {...e, eigen, rotation_angle, rotation_bias}
     })
 
-    console.log(data)
+
     // in case the rotation needs to be done from the other side, rotate 180 deg
     element.selectAll((tag_type === "id" ? "#" : ".") + tag)
         .data(data)
@@ -535,7 +544,6 @@ export function ellipse(element, data, tag, scaling) {
                             };
                         }
                     });
-                console.log()
                 update.select("ellipse")
                     .transition().duration(d => d.duration)
                     .attr('transform', d => `rotate(${-d.rotation_angle})`)
@@ -558,10 +566,13 @@ export function ellipse(element, data, tag, scaling) {
 import * as d3hb from 'd3-hexbin'
 import katex from "katex";
 
+// THIS NEEDS MORE WORK. It is not performant, maybe using a canvas as a background picture works better
 export function gaussian_density(center, variance, covariance) {
+
+
     // density
     const grid = [];
-    const step = 3;
+    const step = 8;
     for (let x = -1000; x <= 1000; x += step) {
         for (let y = -1000; y <= 1000; y += step) {
             const density = gaussianDensity([x, y], [0, 0], math.multiply(variance * 40000, covariance)) * 100;
@@ -571,16 +582,18 @@ export function gaussian_density(center, variance, covariance) {
 
     // Create the hexbin layout
     const hexbin = d3hb.hexbin()
-        .extent([[-10, -10], [10, 10]])
+        .extent([[-12, -12], [12, 12]])
         .radius((step + 2) * Math.sqrt(2) / 2);
 
     const bins = hexbin(grid.map(d => [d.x, d.y, d.density]));
 
     // Create a color scale
     const extent = d3.extent(bins, d => d3.mean(d, p => p[2]));
-    const color = d3.scaleSequential(extent, d3.interpolateBlues)
-    // const color = d3.scaleLinear([0, 0.022], ["white", "#69b3a2"])
+    // const color = d3.scaleSequential(extent, d3.interpolateBlues)
+    const color = d3.scaleLinear(extent, ["black", "#4f46e5"])
 
+    // d3.select('#density').transition()
+    //     .attr("transform",`translate(${center[0] * 200},${-(center[1] * 200)})`)
 
     d3.select('#density')
         .selectAll(".hexagon")
@@ -589,7 +602,7 @@ export function gaussian_density(center, variance, covariance) {
             enter => enter.append("path")
                 .attr("class", "hexagon")
                 .attr("d", hexbin.hexagon())
-                .attr("transform", d => `translate(${d.x + center[0] * 200},${-(d.y + center[1] * 200)})`)
+                .attr("transform", d => `translate(${d.x},${-(d.y)})`)
                 .attr("stroke", d => {
                     return color(d3.mean(d, p => p[2]))
                 })
@@ -597,13 +610,11 @@ export function gaussian_density(center, variance, covariance) {
                 .attr("fill", d => {
                     return color(d3.mean(d, p => p[2]))
                 }),
-            update => update.transition()
-                .attr("d", hexbin.hexagon())
-                .attr("transform", d => `translate(${d.x + center[0] * 200},${-(d.y + center[1] * 200)})`)
+            update => update
+                .attr("transform", d => `translate(${d.x},${-(d.y)})`)
                 .attr("stroke", d => {
                     return color(d3.mean(d, p => p[2]))
                 })
-                .attr("stroke-width", 1)
                 .attr("fill", d => {
                     return color(d3.mean(d, p => p[2]))
                 }),
