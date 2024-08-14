@@ -39,10 +39,14 @@ export default class {
             centerpoint: false,
             levelsets: false,
             one_level: false,
+            state_overlay: false,
+            algorithm_overlay: true
         },
 
         equations: [],
         graphics: [],
+
+        overlay: [],
 
         algorithm: {
             // data
@@ -70,7 +74,7 @@ export default class {
 
     fill_step_cache() {
         const attributes = ['duration', 'delay', "transition", "rotation_bias"]
-        const exceptions = ["Q", "m", "C", "sigma", "r", "color", "coords"]
+        const exceptions = ["Q", "m", "C", "sigma", "r", "color", "coords", "overlay", "class"]
 
         let step_cache = [];
 

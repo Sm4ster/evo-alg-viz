@@ -31,20 +31,39 @@ export default class OnePlusOneES extends parentAnimation {
             },
             centerpoint: true,
             levelsets: true,
+            density: true,
         },
 
+        equations: [
+            {
+                scaling: 1.5,
+                position: [100, -280],
+                value: "0. \\ \\textbf{for} \\ t=1,2,..., \\textit{until satisfied} \\ \\textbf{do}"
+            },
+            {
+                class: "text-indigo-700",
+                scaling: 1.5,
+                position: [100, -250],
+                value: "1. \\quad x_t \\sim m_t + \\sigma_t \\cdot \\mathcal{N}(0, I)"
+            }
+        ],
 
 
-        // latex: [
-        //     {class: "", string: "0. \\ \\textbf{for} \\ t=1,2,..., \\textit{until satisfied} \\ \\textbf{do}"},
-        //     {class: "", string: "1. \\quad x_t \\sim m_t + \\sigma_t \\cdot \\mathcal{N}(0, I)"},
-        //     {class: "", string: "2. \\quad \\textbf{if} \\ f(x_t) \\leq f(m_t) \\ \\textbf{then}"},
-        //     {class: "", string: "3. \\qquad m_{t+1} \\leftarrow x_t"},
-        //     {class: "", string: "4. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha"},
-        //     {class: "", string: "5. \\quad \\textbf{else}"},
-        //     {class: "", string: "6. \\qquad m_{t+1} \\leftarrow m_t"},
-        //     {class: "", string: "7. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha^{-1/4}"},
-        // ]
+        overlay: [
+            {
+                position: [0, 0],
+                latex: [
+                    {class: "", string: "0. \\ \\textbf{for} \\ t=1,2,..., \\textit{until satisfied} \\ \\textbf{do}"},
+                    {class: "", string: "1. \\quad x_t \\sim m_t + \\sigma_t \\cdot \\mathcal{N}(0, I)"},
+                    {class: "", string: "2. \\quad \\textbf{if} \\ f(x_t) \\leq f(m_t) \\ \\textbf{then}"},
+                    {class: "", string: "3. \\qquad m_{t+1} \\leftarrow x_t"},
+                    {class: "", string: "4. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha"},
+                    {class: "", string: "5. \\quad \\textbf{else}"},
+                    {class: "", string: "6. \\qquad m_{t+1} \\leftarrow m_t"},
+                    {class: "", string: "7. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha^{-1/4}"},
+                ]
+            }
+        ]
     }
 
     steps = [
@@ -54,7 +73,7 @@ export default class OnePlusOneES extends parentAnimation {
             algorithm.population = [{r: 5, color: "gray", coords: distribution.sample()}]
         },
         ({algorithm}) => {
-            algorithm.population =  [{
+            algorithm.population = [{
                 delay: 0,
                 r: 5,
                 color: this.fitness(algorithm.population[0].coords) > this.fitness(algorithm.m) ? "red" : "green",
@@ -66,7 +85,9 @@ export default class OnePlusOneES extends parentAnimation {
                 algorithm.m = algorithm.population[0].coords;
                 algorithm.population[0].r = 0;
             } else {
-                {highlight_row: 6}
+                {
+                    highlight_row: 6
+                }
             }
 
         },
@@ -76,7 +97,9 @@ export default class OnePlusOneES extends parentAnimation {
                 algorithm.sigma = algorithm.sigma * alpha
             } else {
                 algorithm.sigma = algorithm.sigma * (1 / Math.pow(alpha, 1 / 4))
-                {highlight_row: 4}
+                {
+                    highlight_row: 4
+                }
             }
 
         },

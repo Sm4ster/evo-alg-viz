@@ -1,6 +1,6 @@
 <template>
   <div class="relative">
-    <svg class="bg-white h-full z-10" ref="svg"
+    <svg class="bg-black h-full z-10" ref="svg"
          :width="base_width"
          :height="base_height"
          :viewBox="x.value + ' ' + y.value + ' ' + width + ' ' + height"
@@ -96,7 +96,6 @@
                     </div>
                   </div>
                 </div>
-
               </DialogPanel>
             </TransitionChild>
           </div>
@@ -104,7 +103,7 @@
       </Dialog>
     </TransitionRoot>
 
-    <div v-if="show.steps" class="absolute bottom-0 right-0 bg-white">
+    <div v-if="show.steps" class="absolute bottom-0 right-0 bg-black">
       <div class="flex justify-center">
         <button
             v-for="i in $_.range(steps.length)"
@@ -117,26 +116,24 @@
           {{ i }}
         </button>
       </div>
-      <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">transformation steps</h3>
+      <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1 bg-black">transformation steps</h3>
     </div>
+<!--            <div class="flex space-x-10 bg-black p-5 rounded absolute top-0 left-0">-->
+<!--              <span class="text-xl" v-if="steps[current_step].show_C"-->
+<!--                    v-html="katex.renderToString(`C=\\begin{bmatrix} ${decimals(steps[current_step].C[0][0])} & ${decimals(steps[current_step].C[0][1])}  \\\\ ${decimals(steps[current_step].C[1][0])} & ${decimals(steps[current_step].C[1][1])} \\end{bmatrix}`)"/>-->
+<!--              <span class="text-xl" v-if="steps[current_step].show_m"-->
+<!--                    v-html="katex.renderToString(`m=\\begin{bmatrix} ${decimals(steps[current_step].m[0])} \\\\ ${decimals(steps[current_step].m[1])} \\end{bmatrix}`)"/>-->
+<!--              <span class="text-xl my-auto" v-if="steps[current_step].show_sigma"-->
+<!--                    v-html="katex.renderToString(`\\sigma= ${decimals(steps[current_step].sigma)}`)"/>-->
+<!--            </div>-->
 
-    <!--    <div class="flex space-x-10 bg-white border border-indigo-700 p-5 rounded absolute top-0 left-0">-->
-    <!--      <span class="text-xl" v-if="steps[current_step].show_C"-->
-    <!--            v-html="katex.renderToString(`C=\\begin{bmatrix} ${decimals(steps[current_step].C[0][0])} & ${decimals(steps[current_step].C[0][1])}  \\\\ ${decimals(steps[current_step].C[1][0])} & ${decimals(steps[current_step].C[1][1])} \\end{bmatrix}`)"/>-->
-    <!--      <span class="text-xl" v-if="steps[current_step].show_m"-->
-    <!--            v-html="katex.renderToString(`m=\\begin{bmatrix} ${decimals(steps[current_step].m[0])} \\\\ ${decimals(steps[current_step].m[1])} \\end{bmatrix}`)"/>-->
-    <!--      <span class="text-xl my-auto" v-if="steps[current_step].show_sigma"-->
-    <!--            v-html="katex.renderToString(`\\sigma= ${decimals(steps[current_step].sigma)}`)"/>-->
-    <!--    </div>-->
-
-    <!--    <div class="flex flex-col bg-white border border-indigo-700 p-5 rounded absolute top-0 right-0">-->
-
-    <!--      <div v-for="(row, i) in steps[current_step].latex"-->
-    <!--           :class="['text-xl p-1', steps[current_step].highlight_row === i ? 'border-2 border-indigo-600': ''] "-->
-    <!--      >-->
-    <!--        <span v-html="katex.renderToString(row.string)"></span>-->
-    <!--      </div>-->
-    <!--    </div>-->
+<!--    <div v-for="overlay in steps[current_step].overlay" class="flex flex-col p-5 rounded absolute top-0 right-0 bg-black text-white">-->
+<!--      <div v-for="(row, i) in overlay.latex"-->
+<!--           :class="['text-xl p-1'] "-->
+<!--      >-->
+<!--        <span v-html="katex.renderToString(row.string)"></span>-->
+<!--      </div>-->
+<!--    </div>-->
   </div>
 </template>
 

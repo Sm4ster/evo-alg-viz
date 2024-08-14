@@ -47,19 +47,25 @@ export function viewBox(data, variable) {
 }
 
 export function equations(element, data) {
+    console.log(data)
     element.selectAll("g")
         .data(data, d => d.id)
         .join(
-            enter => enter.append("g")
-                .attr("transform", d => `scale(${d.scaling ?? 1}) rotate(${d.rotation ?? 0}) translate(${d.position[0]} ${d.position[1]})`)
-                .append("foreignObject")
-                .attr("width", "100%")
-                .attr("height", "100%")
-                .html(d => katex.renderToString(d.text))
-                .transition()
-                .attr("opacity", 1),
+            enter => {
+                let el = enter.append("g")
+                    .attr("id", d => d.id)
+                    .attr("class", d => "text-white whitespace-nowrap " + d.class)
+                    .attr("transform", d => `scale(${d.scaling.value ?? 1}) rotate(${d.rotation ?? 0}) translate(${d.position[0]} ${d.position[1]})`)
+                    .append("foreignObject")
+                    .html(d => katex.renderToString(d.value))
+                    .transition()
+                    .attr("opacity", 1)
+
+                let bbox = el.node().firstElementChild.getBoundingClientRect()
+                el.attr("width", bbox.width).attr("height", bbox.height)
+            },
             update => {
-                update.transition()
+                let el = update.transition()
                     .duration(d => d.duration)
                     .delay(d => d.delay)
                     .attr("transform", d => `scale(${d.scaling ?? 1}) rotate(${d.rotation ?? 0}) translate(${d.position[0]} ${d.position[1]})`)
@@ -90,6 +96,9 @@ export function equations(element, data) {
                 //         .style("opacity", 1);
                 //   }, 500)
                 // })
+
+                // let bbox = el.node().firstElementChild.getBoundingClientRect()
+                // el.attr("width", bbox.width).attr("height", bbox.height)
 
                 return update;
             })
@@ -237,7 +246,7 @@ export function centerpoint(element, data) {
                 .attr("cx", 0)
                 .attr("cy", 0)
                 .attr("r", 1)
-                .attr("stroke", "black")
+                .attr("stroke", "white")
                 .attr("stroke-width", 2),
             update => update.transition().attr("r", 1)
         )
@@ -258,7 +267,7 @@ export function levelsets(element, data, scaling) {
                 .attr('ry', d => d * scaling * Math.sqrt(eigen[1].value) * 50)
                 .attr("transform", d => `rotate(${angle})`)
                 .attr('stroke', 'gray')
-                .attr('stroke-width', 1)
+                .attr('stroke-width', 1.5)
                 .attr('fill', 'none'),
             update => update.transition().duration(d => d.duration)
                 .attr('rx', d => d * scaling * Math.sqrt(eigen[0].value) * 50)
