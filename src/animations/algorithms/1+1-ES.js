@@ -31,7 +31,7 @@ export default class OnePlusOneES extends parentAnimation {
             },
             centerpoint: true,
             levelsets: true,
-            // density: true,
+            density: true,
         },
 
         equations: [

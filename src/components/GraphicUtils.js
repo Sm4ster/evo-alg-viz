@@ -566,11 +566,11 @@ import katex from "katex";
 
 // THIS NEEDS MORE WORK. It is not performant, maybe using a canvas as a background picture works better
 export function gaussian_density(center, variance, covariance) {
-
+    const canvasSize = 2000;
 
     // density
     const grid = [];
-    const step = 8;
+    const step = 5;
     for (let x = -1000; x <= 1000; x += step) {
         for (let y = -1000; y <= 1000; y += step) {
             const density = gaussianDensity([x, y], [0, 0], math.multiply(variance * 40000, covariance)) * 100;
@@ -580,7 +580,7 @@ export function gaussian_density(center, variance, covariance) {
 
     // Create the hexbin layout
     const hexbin = d3hb.hexbin()
-        .extent([[-12, -12], [12, 12]])
+        .extent([[-10, -10], [10, 10]])
         .radius((step + 2) * Math.sqrt(2) / 2);
 
     const bins = hexbin(grid.map(d => [d.x, d.y, d.density]));
@@ -593,32 +593,72 @@ export function gaussian_density(center, variance, covariance) {
     // d3.select('#density').transition()
     //     .attr("transform",`translate(${center[0] * 200},${-(center[1] * 200)})`)
 
+    // Create an offscreen canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasSize;
+    canvas.height = canvasSize;
+    const context = canvas.getContext('2d');
+
+    // Draw the hexbin on the canvas
+    // context.clearRect(-200, -200, 200, 200);
+
+
+    // Draw the hexbin on the canvas
+    bins.forEach(function(d) {
+        // Set the fill and stroke styles
+        context.fillStyle = color(d3.mean(d, p => p[2]));
+        context.strokeStyle = color(d3.mean(d, p => p[2]));
+        let p = new Path2D(`M${d.x + 200},${d.y + 200 }${hexbin.hexagon()}`);
+        context.fill(p);
+
+
+
+        // Fill and stroke the hexagon
+        context.fill();
+        context.stroke();
+    });
+
+
+    // Convert the canvas content to a data URL
+    const dataUrl = canvas.toDataURL("image/png");
+
     d3.select('#density')
-        .selectAll(".hexagon")
-        .data(bins)
-        .join(
-            enter => enter.append("path")
-                .attr("class", "hexagon")
-                .attr("d", hexbin.hexagon())
-                .attr("transform", d => `translate(${d.x},${-(d.y)})`)
-                .attr("stroke", d => {
-                    return color(d3.mean(d, p => p[2]))
-                })
-                .attr("stroke-width", 1)
-                .attr("fill", d => {
-                    return color(d3.mean(d, p => p[2]))
-                }),
-            update => update
-                .attr("transform", d => `translate(${d.x},${-(d.y)})`)
-                .attr("stroke", d => {
-                    return color(d3.mean(d, p => p[2]))
-                })
-                .attr("fill", d => {
-                    return color(d3.mean(d, p => p[2]))
-                }),
-            exit => exit.transition()
-                .attr("opacity", 0)
-        )
+        .append("image")
+        .attr("xlink:href", dataUrl)
+        .attr("width", 2000)
+        .attr("height", 2000);
+        // .append("rect")
+        // .attr("width", 2000)
+        // .attr("height", 2000)
+        // .attr("class", "background-group")
+        // .style("background", `url(${dataUrl})`);
+
+    // d3.select('#density')
+    //     .selectAll(".hexagon")
+    //     .data(bins)
+    //     .join(
+    //         enter => enter.append("path")
+    //             .attr("class", "hexagon")
+    //             .attr("d", hexbin.hexagon())
+    //             .attr("transform", d => `translate(${d.x},${-(d.y)})`)
+    //             .attr("stroke", d => {
+    //                 return color(d3.mean(d, p => p[2]))
+    //             })
+    //             .attr("stroke-width", 1)
+    //             .attr("fill", d => {
+    //                 return color(d3.mean(d, p => p[2]))
+    //             }),
+    //         update => update
+    //             .attr("transform", d => `translate(${d.x},${-(d.y)})`)
+    //             .attr("stroke", d => {
+    //                 return color(d3.mean(d, p => p[2]))
+    //             })
+    //             .attr("fill", d => {
+    //                 return color(d3.mean(d, p => p[2]))
+    //             }),
+    //         exit => exit.transition()
+    //             .attr("opacity", 0)
+    //     )
 
 }
 
