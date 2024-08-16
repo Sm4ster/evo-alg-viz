@@ -47,7 +47,7 @@ export function viewBox(data, variable) {
 }
 
 export function equations(element, data) {
-
+    console.log(data)
     element.selectAll("g")
         .data(data, d => d.id)
         .join(
@@ -55,23 +55,17 @@ export function equations(element, data) {
                 let el = enter.append("g")
                     .attr("id", d => d.id)
                     .attr("transform", d => `scale(${1 ?? 1}) rotate(${d.rotation ?? 0}) translate(${d.position[0]} ${d.position[1]})`)
+                    .attr("class", `text-white`)
                     .append("foreignObject")
-                    .attr("class", "bg-black text-white whitespace-nowrap bg-opacity-[0.7]")
+                    .attr("class", d => `overflow-visible whitespace-nowrap ${d.class}`)
+                    .attr("width", 1)
+                    .attr("height", 1)
                     .html(d => katex.renderToString(d.value))
                     .each(function(d) {
-                        let bbox = this.firstElementChild
-
-                        console.log(d, this,this.firstElementChild.getBoundingClientRect(), getComputedStyle(this.firstElementChild))
+                        d3.select(this.firstElementChild.children[1]).attr("class", ``)
                     })
                     .transition()
                     .attr("opacity", 1)
-
-                // let bbox = el.node().firstElementChild.getBoundingClientRect()
-                // console.log(el.node())
-                // console.log(bbox)
-                // enter.select(d => `g#${d.id}`)
-                //     .attr("width", d => bbox.width / d.scaling.value)
-                //     .attr("height", d => bbox.height / d.scaling.value)
             },
             update => {
                 let el = update.transition()
@@ -110,7 +104,11 @@ export function equations(element, data) {
                 // el.attr("width", bbox.width).attr("height", bbox.height)
 
                 return update;
-            })
+            }
+        )
+
+
+    // console.log(element.node().firstElementChild.firstElementChild.firstElementChild, element.node().firstElementChild.firstElementChild.firstElementChild.getBoundingClientRect());
 }
 
 export function graphics(element, data) {

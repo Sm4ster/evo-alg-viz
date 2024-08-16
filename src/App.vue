@@ -8,8 +8,8 @@ import Visualization from "./components/Visualization.vue";
 
 <template>
 
-  <div class="flex flex-col w-full h-full items-start">
-    <main class="flex flex-col bg-stone-200 w-full h-screen">
+  <div class="flex flex-col w-full h-full items-start ">
+    <main class="flex flex-col w-full h-screen">
       <Visualization class="h-full"></Visualization>
     </main>
   </div>

@@ -36,49 +36,44 @@ export default class OnePlusOneES extends parentAnimation {
 
         equations: [
             {
-                class: "text-indigo-700 bg-black",
-                scaling: 1.5,
+                class: "text-indigo-700",
                 position: [300, -350],
                 value: "0. \\ \\textbf{for} \\ t=1,2,..., \\textit{until satisfied} \\ \\textbf{do}"
             },
             {
                 class: "text-indigo-700",
-                scaling: 1.5,
                 position: [300, -320],
                 value: "1. \\quad x_t \\sim m_t + \\sigma_t \\cdot \\mathcal{N}(0, I)"
             },
             {
-                scaling: 1.5,
                 position: [300, -290],
                 class: "",
                 value: "2. \\quad \\textbf{if} \\ f(x_t) \\leq f(m_t) \\ \\textbf{then}"
             },
             {
-                scaling: 1.5,
                 position: [300, -260],
                 class: "",
                 value: "3. \\qquad m_{t+1} \\leftarrow x_t"
             },
             {
-                scaling: 1.5,
                 position: [300, -230],
                 class: "",
                 value: "4. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha"
             },
             {
-                scaling: 1.5,
                 position: [300, -200],
-                class: "", value: "5. \\quad \\textbf{else}"
+                class: "",
+                value: "5. \\quad \\textbf{else}"
             },
             {
-                scaling: 1.5,
                 position: [300, -170],
-                class: "", value: "6. \\qquad m_{t+1} \\leftarrow m_t"
+                class: "",
+                value: "6. \\qquad m_{t+1} \\leftarrow m_t"
             },
             {
-                scaling: 1.5,
                 position: [300, -140],
-                class: "", value: "7. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha^{-1/4}"
+                class: "",
+                value: "7. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha^{-1/4}"
             },
         ],
     }
