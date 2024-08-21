@@ -34,6 +34,19 @@ export default class OnePlusOneES extends parentAnimation {
             density: true,
         },
 
+        viewbox: {
+            x: 500,
+            y: 500,
+            zoom: 0.05,
+            graph_rotation: 0,
+            algorithm_rotation: 0,
+            scaling: 1,
+        },
+
+        algorithm: {
+            C: [[1, 0.5], [0.5, 1]],
+        },
+
         equations: [
             {
                 class: "text-indigo-700",
@@ -83,7 +96,7 @@ export default class OnePlusOneES extends parentAnimation {
             let distribution = MultivariateNormal(algorithm.m, math.multiply(algorithm.sigma, algorithm.C));
 
             algorithm.population = [{r: 5, color: "gray", coords: distribution.sample()}]
-            equations[1].class="text-indigo-700"
+            equations[1].class = "text-indigo-700"
         },
         ({algorithm}) => {
             algorithm.population = [{

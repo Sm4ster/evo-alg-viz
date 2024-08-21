@@ -372,9 +372,11 @@ export default {
     },
     update(data) {
       console.log("data:", data)
+
       // zooming and moving
-      viewBox(data.viewbox.x, this.x)
       viewBox(data.viewbox.y, this.y)
+      viewBox(data.viewbox.x, this.x)
+this.zoom.value = data.viewbox.zoom.value
       viewBox(data.viewbox.zoom, this.zoom)
 
 

@@ -34,8 +34,8 @@ function get_angles(startX, startY, endX, endY) {
 }
 
 export function viewBox(data, variable) {
-
-    const interpolate = d3.interpolate(variable.value, data.value);
+console.log("viewbox:", variable.value, data)
+    const interpolate = d3.interpolate( data.value,variable.value);
     d3.transition()
         .duration(data.duration)
         .delay(data.delay)
@@ -44,6 +44,7 @@ export function viewBox(data, variable) {
                 variable.value = interpolate(t);
             };
         });
+    console.log("viewbox_after:", variable.value)
 }
 
 export function equations(element, data) {
@@ -61,7 +62,7 @@ export function equations(element, data) {
                     .attr("width", 1)
                     .attr("height", 1)
                     .html(d => katex.renderToString(d.value))
-                    .each(function(d) {
+                    .each(function (d) {
                         d3.select(this.firstElementChild.children[1]).attr("class", ``)
                     })
                     .transition()
@@ -566,109 +567,37 @@ import katex from "katex";
 
 // THIS NEEDS MORE WORK. It is not performant, maybe using a canvas as a background picture works better
 export function gaussian_density(center, variance, covariance) {
-    const canvasSize = 2000;
+    const canvasSize = 1000;
+    console.log(covariance)
 
-    // density
-    const grid = [];
-    const step = 5;
-    for (let x = -1000; x <= 1000; x += step) {
-        for (let y = -1000; y <= 1000; y += step) {
-            const density = gaussianDensity([x, y], [0, 0], math.multiply(variance * 40000, covariance)) * 100;
-            if (density > 1e-4) grid.push({x, y, density});
-        }
+
+    // Function to check if a point (x, y) is within the ellipse
+    function isPointInEllipse(x, y, cx, cy, a, b, theta) {
+        const translatedX = x - cx;
+        const translatedY = y - cy;
+
+        // Rotate point back using the inverse rotation matrix
+        const cosTheta = Math.cos(-theta);
+        const sinTheta = Math.sin(-theta);
+
+        const xRot = translatedX * cosTheta - translatedY * sinTheta;
+        const yRot = translatedX * sinTheta + translatedY * cosTheta;
+
+        // Apply the standard ellipse equation to the rotated coordinates
+        return (xRot ** 2) / (a ** 2) + (yRot ** 2) / (b ** 2) <= 1;
     }
 
-    // Create the hexbin layout
-    const hexbin = d3hb.hexbin()
-        .extent([[-10, -10], [10, 10]])
-        .radius((step + 2) * Math.sqrt(2) / 2);
+    // Generate all points in the grid
+    const rows = 2000
+    const cols = 2000
+    const points = new Array(rows * cols);
+    // const x_values = new Int32Array(rows * cols);
+    // const y_values = new Int32Array(rows * cols);
 
-    const bins = hexbin(grid.map(d => [d.x, d.y, d.density]));
-
-    // Create a color scale
-    const extent = d3.extent(bins, d => d3.mean(d, p => p[2]));
-    // const color = d3.scaleSequential(extent, d3.interpolateBlues)
-    const color = d3.scaleLinear(extent, ["black", "#4f46e5"])
-
-    // d3.select('#density').transition()
-    //     .attr("transform",`translate(${center[0] * 200},${-(center[1] * 200)})`)
-
-    // Create an offscreen canvas
-    const canvas = document.createElement('canvas');
-    canvas.width = canvasSize;
-    canvas.height = canvasSize;
-    const context = canvas.getContext('2d');
-
-    // Draw the hexbin on the canvas
-    // context.clearRect(-200, -200, 200, 200);
-
-
-    // Draw the hexbin on the canvas
-    bins.forEach(function(d) {
-        // Set the fill and stroke styles
-        context.fillStyle = color(d3.mean(d, p => p[2]));
-        context.strokeStyle = color(d3.mean(d, p => p[2]));
-        let p = new Path2D(`M${d.x + 200},${d.y + 200 }${hexbin.hexagon()}`);
-        context.fill(p);
-
-
-
-        // Fill and stroke the hexagon
-        context.fill();
-        context.stroke();
-    });
-
-
-    // Convert the canvas content to a data URL
-    const dataUrl = canvas.toDataURL("image/png");
-
-    d3.select('#density')
-        .append("image")
-        .attr("xlink:href", dataUrl)
-        .attr("width", 2000)
-        .attr("height", 2000);
-        // .append("rect")
-        // .attr("width", 2000)
-        // .attr("height", 2000)
-        // .attr("class", "background-group")
-        // .style("background", `url(${dataUrl})`);
-
-    // d3.select('#density')
-    //     .selectAll(".hexagon")
-    //     .data(bins)
-    //     .join(
-    //         enter => enter.append("path")
-    //             .attr("class", "hexagon")
-    //             .attr("d", hexbin.hexagon())
-    //             .attr("transform", d => `translate(${d.x},${-(d.y)})`)
-    //             .attr("stroke", d => {
-    //                 return color(d3.mean(d, p => p[2]))
-    //             })
-    //             .attr("stroke-width", 1)
-    //             .attr("fill", d => {
-    //                 return color(d3.mean(d, p => p[2]))
-    //             }),
-    //         update => update
-    //             .attr("transform", d => `translate(${d.x},${-(d.y)})`)
-    //             .attr("stroke", d => {
-    //                 return color(d3.mean(d, p => p[2]))
-    //             })
-    //             .attr("fill", d => {
-    //                 return color(d3.mean(d, p => p[2]))
-    //             }),
-    //         exit => exit.transition()
-    //             .attr("opacity", 0)
-    //     )
-
-}
-
-export function gaussianDensity(point, mean, covariance) {
-    // Destructure the point and the mean
-    const [x, y] = point;
-    const [muX, muY] = mean;
+    performance.mark("before-grid-eval")
 
     // Destructure the covariance matrix
-    const [[sigmaXX, sigmaXY], [sigmaYX, sigmaYY]] = covariance;
+    const [[sigmaXX, sigmaXY], [sigmaYX, sigmaYY]] = math.multiply(variance * 40000, [[1, -0.5], [-0.5, 1]]);
 
     // Calculate the determinant of the covariance matrix
     const detSigma = sigmaXX * sigmaYY - sigmaXY * sigmaYX;
@@ -683,19 +612,166 @@ export function gaussianDensity(point, mean, covariance) {
         [-sigmaYX / detSigma, sigmaXX / detSigma]
     ];
 
-    // Compute the vector (x - mu)
-    const diffX = x - muX;
-    const diffY = y - muY;
-
-    // Compute the quadratic form (x - mu)^T * Sigma^{-1} * (x - mu)
-    const quadraticForm = diffX * (inverseSigma[0][0] * diffX + inverseSigma[0][1] * diffY) +
-        diffY * (inverseSigma[1][0] * diffX + inverseSigma[1][1] * diffY);
-
-    // Compute the density using the Gaussian density formula
     const coefficient = 1 / (2 * Math.PI * Math.sqrt(detSigma));
-    const exponent = -0.5 * quadraticForm;
 
-    return coefficient * Math.exp(exponent);
+    for (let x_i = 0; x_i < cols; x_i++) {
+        for (let y_i = 0; y_i < rows; y_i++) {
+            const [x, y] = [x_i - rows / 2, y_i - cols / 2]
+            if(isPointInEllipse(x,y,0,0,550,550,0)){
+                // Compute the quadratic form (x - mu)^T * Sigma^{-1} * (x - mu)
+                const quadraticForm =
+                    x * (inverseSigma[0][0] * x + inverseSigma[0][1] * y) +
+                    y * (inverseSigma[1][0] * x + inverseSigma[1][1] * x);
+
+                // Compute the density using the Gaussian density formula
+                const exponent = -0.5 * quadraticForm;
+
+                points[x_i * y_i] = [x,y, coefficient * Math.exp(exponent) * 100];
+            }
+        }
+    }
+
+
+
+
+    performance.mark("after-grid-eval")
+    performance.measure("preparation", "before-grid-eval", "after-grid-eval")
+    console.log(performance.getEntriesByName('preparation')[0].duration)
+
+    // Create the hexbin layout
+    const hexbin = d3hb.hexbin()
+        .radius(5 * Math.sqrt(2) / 2);
+
+
+    const bins = hexbin(points.filter(d => d));
+
+
+    // Create a color scale
+    const extent = d3.extent(bins, d => d3.mean(d, p => p[2]));
+    // const color = d3.scaleSequential(extent, d3.interpolateBlues)
+    const color = d3.scaleLinear(extent, ["transparent", "#4f46e5"])
+
+    // d3.select('#density').transition()
+    //     .attr("transform",`translate(${center[0] * 200},${-(center[1] * 200)})`)
+
+    // Create an offscreen canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasSize;
+    canvas.height = canvasSize;
+    const context = canvas.getContext('2d');
+
+    // Draw the hexbin on the canvas
+    context.clearRect(-2000, -2000, 2000, 2000);
+    // const opacity_scale = d3.scalePow(extent, [0, 1]).exponent(2);
+    // const opacity_scale = d3.scaleSqrt(extent, [0, 1]);
+    const opacity_scale = d3.scaleLog(extent, [0, 1]);
+
+    // Draw the hexbin on the canvas
+    // bins.forEach(function (d) {
+    //     // Set the fill and stroke styles
+    //     context.fillStyle = color(d3.mean(d, p => p[2])).replace("rgb", "rgba").replace(")", "," + opacity_scale(d3.mean(d, p => p[2])) + ")");
+    //     let p = new Path2D(`M${d.x + 500},${-d.y + 500}${hexbin.hexagon()}`);
+    //     context.fill(p);
+    // });
+
+
+    // Convert the canvas content to a data URL
+    // const dataUrl = canvas.toDataURL("image/png");
+
+    // d3.select('#density')
+    //     .selectAll("image")
+    //     .data([dataUrl])
+    //     .join(
+    //         enter => enter.append("image")
+    //             .attr("width", 1000)
+    //             .attr("height", 1000)
+    //             .attr("transform", `translate(${center[0] * 200 - 500}, ${-(center[1] * 200 + 500)})`)
+    //             .attr("xlink:href", d => d),
+    //
+    //         update => update
+    //             .attr("xlink:href", d => d)
+    //             .transition()
+    //             .duration(1000)
+    //             .attr("transform", `translate(${center[0] * 200 - 500}, ${-(center[1] * 200 + 500)})`)
+    //
+    //     )
+    performance.mark("after-canvas-draw")
+
+    const color2 = d3.scaleLinear(extent, ["black", "orange"])
+    d3.select('#density')
+        .selectAll(".hexagon")
+        .data(bins)
+        .join(
+            enter => enter.append("path")
+                .attr("class", "hexagon")
+                .attr("d", hexbin.hexagon([3.533]))
+                .attr("transform", d => `translate(${d.x},${-(d.y)})`)
+                .attr("stroke", d => {
+                    return color(d3.mean(d, p => p[2]))
+                })
+                .attr("stroke-opacity", 0)
+                .attr("stroke-width",0)
+                .attr("fill", d => {
+                    return color(d3.mean(d, p => p[2]))
+                }),
+                // .attr("opacity", d => opacity_scale(d3.mean(d, p => p[2]))),
+            update => update
+                .attr("transform", d => `translate(${d.x},${-(d.y)})`)
+                .attr("stroke", d => {
+                    return color(d3.mean(d, p => p[2]))
+                })
+                .attr("fill", d => {
+                    return color(d3.mean(d, p => p[2]))
+                }),
+                // .attr("opacity", d => opacity_scale(d3.mean(d, p => p[2]))),
+            exit => exit.transition()
+                .attr("opacity", 0)
+        )
+
+    performance.mark("after-svg-draw")
+
+
+    performance.measure("canvas", "after-grid-eval", "after-canvas-draw")
+    performance.measure("svg", "after-canvas-draw", "after-svg-draw")
+
+
+    console.log(performance.getEntriesByName('canvas')[0].duration)
+    console.log(performance.getEntriesByName('svg')[0].duration)
+
+    performance.clearMarks('before-grid-eval');
+    performance.clearMarks('after-grid-eval');
+    performance.clearMarks('after-canvas-draw');
+    performance.clearMarks('after-svg-draw"');
+    performance.clearMeasures('preparation');
+    performance.clearMeasures('canvas');
+    performance.clearMeasures('svg');
+
+}
+
+/**
+ * Compute the Gaussian density for a set of points.
+ * @param {Array} points - An array of points (each a 2-element array).
+ * @param {Array} covariance - The 2x2 covariance matrix.
+ * @returns {Array} - An array of density values corresponding to each point.
+ */
+
+export function gaussianDensity(points, covariance) {
+
+
+    return points.map(point => {
+        const [x, y] = point;
+
+        // Compute the quadratic form (x - mu)^T * Sigma^{-1} * (x - mu)
+        const quadraticForm = x * (inverseSigma[0][0] * x + inverseSigma[0][1] * y) +
+            y * (inverseSigma[1][0] * x + inverseSigma[1][1] * x);
+
+        // Compute the density using the Gaussian density formula
+        const exponent = -0.5 * quadraticForm;
+
+        return coefficient * Math.exp(exponent) * 100;
+    });
+
+
 }
 
 
