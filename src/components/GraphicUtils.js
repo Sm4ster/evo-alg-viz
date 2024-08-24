@@ -5,6 +5,7 @@ import * as math from "mathjs";
 export function parseTransform(transform) {
     const translate = /translate\(([^)]+)\)/.exec(transform);
     const rotate = /rotate\(([^)]+)\)/.exec(transform);
+    const scale = /scale\(([^)]+)\)/.exec(transform);
 
     const result = {};
 
@@ -21,6 +22,12 @@ export function parseTransform(transform) {
         result.rotateCY = rotateValue.length > 2 ? rotateValue[2] : 0;
     }
 
+    if (scale) {
+        const scaleValue = rotate[1].split(' ').map(Number);
+        result.scale = scaleValue[0];
+
+    }
+
     return result;
 }
 
@@ -33,18 +40,64 @@ function get_angles(startX, startY, endX, endY) {
 
 }
 
-export function viewBox(data, variable) {
-console.log("viewbox:", variable.value, data)
-    const interpolate = d3.interpolate( data.value,variable.value);
-    d3.transition()
-        .duration(data.duration)
-        .delay(data.delay)
-        .tween("dataTween", () => {
+export function viewBox(element, data, base_width, base_height) {
+
+    //TODO set on end the right values to vuejs
+    console.log("viewbox data:", data)
+
+    // transition x
+    element.select("#viewbox_x").transition()
+        .duration(data.x.duration)
+        .delay(data.x.delay)
+        // .ease(d3.easeLinear)
+        .attrTween("transform", function () {
+            // Initial values captured at the start of the transition
+            let initialValue = parseTransform(element.select("#viewbox_x").node().getAttribute("transform")).translateX;
+
+            // Interpolators for width and height
+            const interpolator = d3.interpolateNumber(initialValue, data.x.value);
+
             return (t) => {
-                variable.value = interpolate(t);
+                return `translate(-${interpolator(t)} 0)`;
             };
         });
-    console.log("viewbox_after:", variable.value)
+
+    // transition y
+    element.select("#viewbox_y").transition()
+        .duration(data.y.duration)
+        .delay(data.y.delay)
+        // .ease(d3.easeLinear)
+        .attrTween("transform", function () {
+            // Initial values captured at the start of the transition
+            let initialValue = parseTransform(element.select("#viewbox_y").node().getAttribute("transform")).translateY;
+
+            // Interpolators for width and height
+            const interpolator = d3.interpolateNumber(initialValue, data.y.value);
+
+            return (t) => {
+                return `translate(0 ${interpolator(t)})`;
+            };
+        });
+
+    //transition zoom (width and height)
+    element.transition()
+        .duration(data.zoom.duration)
+        .delay(data.zoom.delay)
+        .attrTween("viewBox", function () {
+            // Initial values captured at the start of the transition
+            let initialViewBox = element.node().getAttribute("viewBox").split(" ").map(Number);
+            let [initialX, initialY, initialWidth, initialHeight] = initialViewBox;
+
+            console.log(initialViewBox)
+            // Interpolators for width and height
+            const widthInterpolator = d3.interpolateNumber(initialWidth, data.zoom.value * base_width);
+            const heightInterpolator = d3.interpolateNumber(initialHeight, data.zoom.value * base_height);
+
+            return (t) => {
+                // Return the updated viewBox string
+                return `0 0 ${widthInterpolator(t)} ${heightInterpolator(t)}`;
+            };
+        });
 }
 
 export function equations(element, data) {
@@ -617,7 +670,7 @@ export function gaussian_density(center, variance, covariance) {
     for (let x_i = 0; x_i < cols; x_i++) {
         for (let y_i = 0; y_i < rows; y_i++) {
             const [x, y] = [x_i - rows / 2, y_i - cols / 2]
-            if(isPointInEllipse(x,y,0,0,550,550,0)){
+            if (isPointInEllipse(x, y, 0, 0, 550, 550, 0)) {
                 // Compute the quadratic form (x - mu)^T * Sigma^{-1} * (x - mu)
                 const quadraticForm =
                     x * (inverseSigma[0][0] * x + inverseSigma[0][1] * y) +
@@ -626,12 +679,10 @@ export function gaussian_density(center, variance, covariance) {
                 // Compute the density using the Gaussian density formula
                 const exponent = -0.5 * quadraticForm;
 
-                points[x_i * y_i] = [x,y, coefficient * Math.exp(exponent) * 100];
+                points[x_i * y_i] = [x, y, coefficient * Math.exp(exponent) * 100];
             }
         }
     }
-
-
 
 
     performance.mark("after-grid-eval")
@@ -710,11 +761,11 @@ export function gaussian_density(center, variance, covariance) {
                     return color(d3.mean(d, p => p[2]))
                 })
                 .attr("stroke-opacity", 0)
-                .attr("stroke-width",0)
+                .attr("stroke-width", 0)
                 .attr("fill", d => {
                     return color(d3.mean(d, p => p[2]))
                 }),
-                // .attr("opacity", d => opacity_scale(d3.mean(d, p => p[2]))),
+            // .attr("opacity", d => opacity_scale(d3.mean(d, p => p[2]))),
             update => update
                 .attr("transform", d => `translate(${d.x},${-(d.y)})`)
                 .attr("stroke", d => {
@@ -723,7 +774,7 @@ export function gaussian_density(center, variance, covariance) {
                 .attr("fill", d => {
                     return color(d3.mean(d, p => p[2]))
                 }),
-                // .attr("opacity", d => opacity_scale(d3.mean(d, p => p[2]))),
+            // .attr("opacity", d => opacity_scale(d3.mean(d, p => p[2]))),
             exit => exit.transition()
                 .attr("opacity", 0)
         )

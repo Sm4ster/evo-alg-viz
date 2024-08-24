@@ -35,9 +35,7 @@ export default class OnePlusOneES extends parentAnimation {
         },
 
         viewbox: {
-            x: 500,
-            y: 500,
-            zoom: 0.05,
+            zoom: 1,
             graph_rotation: 0,
             algorithm_rotation: 0,
             scaling: 1,
@@ -92,6 +90,23 @@ export default class OnePlusOneES extends parentAnimation {
     }
 
     steps = [
+        ({viewbox}) => {
+            viewbox.x = {
+                delay: 0,
+                duration: 3000,
+                value: 250
+            }
+            viewbox.y = {
+                delay: 1500,
+                duration: 1500,
+                value: 125
+            }
+            viewbox.zoom = {
+                delay: 2000,
+                duration: 2000,
+                value: 2
+            }
+        },
         ({algorithm, equations}) => {
             let distribution = MultivariateNormal(algorithm.m, math.multiply(algorithm.sigma, algorithm.C));
 

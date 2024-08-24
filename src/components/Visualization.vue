@@ -3,20 +3,24 @@
     <svg class="bg-black h-full z-10" ref="svg"
          :width="base_width"
          :height="base_height"
-         :viewBox="x.value + ' ' + y.value + ' ' + width + ' ' + height"
+         :viewBox="`${0} ${0} ${width} ${height}`"
     >
-      <g id="container" :transform="`translate(${width/2} ${height/2})`">
-        <g id="graph" transform="rotate(0)">
-          <g id="x_axis"></g>
-          <g id="y_axis"></g>
-          <g id="levelsets"></g>
+      <g id="viewbox_x" :transform="`translate(${-x.value} 0)`">
+        <g id="viewbox_y" :transform="`translate(0 ${-y.value})`">
+          <g id="container" :transform="`translate(${width/2} ${height/2})`">
+            <g id="graph" transform="rotate(0)">
+              <g id="x_axis"></g>
+              <g id="y_axis"></g>
+              <g id="levelsets"></g>
+            </g>
+            <g id="algorithm" transform="rotate(0)">
+              <g id="density"></g>
+              <g id="population"></g>
+            </g>
+            <g id="equations"></g>
+            <g id="graphics"></g>
+          </g>
         </g>
-        <g id="algorithm" transform="rotate(0)">
-          <g id="density"></g>
-          <g id="population"></g>
-        </g>
-        <g id="equations"></g>
-        <g id="graphics"></g>
       </g>
     </svg>
     <TransitionRoot as="template" :show="show.settings">
@@ -118,22 +122,22 @@
       </div>
       <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1 bg-black">transformation steps</h3>
     </div>
-<!--            <div class="flex space-x-10 bg-black p-5 rounded absolute top-0 left-0">-->
-<!--              <span class="text-xl" v-if="steps[current_step].show_C"-->
-<!--                    v-html="katex.renderToString(`C=\\begin{bmatrix} ${decimals(steps[current_step].C[0][0])} & ${decimals(steps[current_step].C[0][1])}  \\\\ ${decimals(steps[current_step].C[1][0])} & ${decimals(steps[current_step].C[1][1])} \\end{bmatrix}`)"/>-->
-<!--              <span class="text-xl" v-if="steps[current_step].show_m"-->
-<!--                    v-html="katex.renderToString(`m=\\begin{bmatrix} ${decimals(steps[current_step].m[0])} \\\\ ${decimals(steps[current_step].m[1])} \\end{bmatrix}`)"/>-->
-<!--              <span class="text-xl my-auto" v-if="steps[current_step].show_sigma"-->
-<!--                    v-html="katex.renderToString(`\\sigma= ${decimals(steps[current_step].sigma)}`)"/>-->
-<!--            </div>-->
+    <!--            <div class="flex space-x-10 bg-black p-5 rounded absolute top-0 left-0">-->
+    <!--              <span class="text-xl" v-if="steps[current_step].show_C"-->
+    <!--                    v-html="katex.renderToString(`C=\\begin{bmatrix} ${decimals(steps[current_step].C[0][0])} & ${decimals(steps[current_step].C[0][1])}  \\\\ ${decimals(steps[current_step].C[1][0])} & ${decimals(steps[current_step].C[1][1])} \\end{bmatrix}`)"/>-->
+    <!--              <span class="text-xl" v-if="steps[current_step].show_m"-->
+    <!--                    v-html="katex.renderToString(`m=\\begin{bmatrix} ${decimals(steps[current_step].m[0])} \\\\ ${decimals(steps[current_step].m[1])} \\end{bmatrix}`)"/>-->
+    <!--              <span class="text-xl my-auto" v-if="steps[current_step].show_sigma"-->
+    <!--                    v-html="katex.renderToString(`\\sigma= ${decimals(steps[current_step].sigma)}`)"/>-->
+    <!--            </div>-->
 
-<!--    <div v-for="overlay in steps[current_step].overlay" class="flex flex-col p-5 rounded absolute top-0 right-0 bg-black text-white">-->
-<!--      <div v-for="(row, i) in overlay.latex"-->
-<!--           :class="['text-xl p-1'] "-->
-<!--      >-->
-<!--        <span v-html="katex.renderToString(row.string)"></span>-->
-<!--      </div>-->
-<!--    </div>-->
+    <!--    <div v-for="overlay in steps[current_step].overlay" class="flex flex-col p-5 rounded absolute top-0 right-0 bg-black text-white">-->
+    <!--      <div v-for="(row, i) in overlay.latex"-->
+    <!--           :class="['text-xl p-1'] "-->
+    <!--      >-->
+    <!--        <span v-html="katex.renderToString(row.string)"></span>-->
+    <!--      </div>-->
+    <!--    </div>-->
   </div>
 </template>
 
@@ -373,11 +377,7 @@ export default {
     update(data) {
       console.log("data:", data)
 
-      // zooming and moving
-      viewBox(data.viewbox.y, this.y)
-      viewBox(data.viewbox.x, this.x)
-this.zoom.value = data.viewbox.zoom.value
-      viewBox(data.viewbox.zoom, this.zoom)
+      viewBox(d3.select(this.$refs.svg), data.viewbox, this.base_width, this.base_height)
 
 
       // graphics and icons
