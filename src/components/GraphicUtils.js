@@ -58,7 +58,7 @@ export function viewBox(element, data, base_width, base_height) {
             const interpolator = d3.interpolateNumber(initialValue, data.x.value);
 
             return (t) => {
-                return `translate(-${interpolator(t)} 0)`;
+                return `translate(${-interpolator(t)} 0)`;
             };
         });
 
@@ -101,14 +101,24 @@ export function viewBox(element, data, base_width, base_height) {
 }
 
 export function equations(element, data) {
-    console.log(data)
     element.selectAll("g")
         .data(data, d => d.id)
         .join(
             enter => {
-                let el = enter.append("g")
+                enter.append("g")
                     .attr("id", d => d.id)
-                    .attr("transform", d => `scale(${1 ?? 1}) rotate(${d.rotation ?? 0}) translate(${d.position[0]} ${d.position[1]})`)
+                    .append("g")
+                    .attr("class", "position_x")
+                    .attr("transform", d => `translate(${d.x.value} 0)`)
+                    .append("g")
+                    .attr("class", "position_y")
+                    .attr("transform", d => `translate(0 ${d.y})`)
+                    .append("g")
+                    .attr("class", "scaling")
+                    .attr("transform", d => `scale(${d.scaling})`)
+                    .append("g")
+                    .attr("class", "rotation")
+                    .attr("transform", d => `rotate(${d.rotation.value})`)
                     .attr("class", `text-white`)
                     .append("foreignObject")
                     .attr("class", d => `overflow-visible whitespace-nowrap ${d.class}`)
@@ -116,21 +126,20 @@ export function equations(element, data) {
                     .attr("height", 1)
                     .html(d => katex.renderToString(d.value))
                     .each(function (d) {
-                        d3.select(this.firstElementChild.children[1]).attr("class", ``)
+                        d3.select(this.firstElementChild.children[1]).attr("class", `${d.innerClass}`)
                     })
                     .transition()
                     .attr("opacity", 1)
             },
             update => {
-                let el = update.transition()
-                    .duration(d => d.duration)
-                    .delay(d => d.delay)
-                    .attr("transform", d => `scale(${d.scaling ?? 1}) rotate(${d.rotation ?? 0}) translate(${d.position[0]} ${d.position[1]})`)
-
+                update.select("g.position_x").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `translate(${d.x} 0)`);
+                update.select("g.position_y").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `translate(0 ${d.y})`);
+                update.select("g.scaling").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `scale(${d.scaling})`);
+                update.select("g.rotation").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `scale(${d.rotation})`);
 
                 const interpolateNumber = NumberInterpolator("f(5.1)", "f(10)");
                 update.select("foreignObject").transition()
-                    .duration(1000)
+                    .transition().duration(d => d.duration).delay(d => d.delay)
                     .tween("dataTween", function (d) {
                         const element = this;
                         return (t) => {
@@ -141,7 +150,7 @@ export function equations(element, data) {
 
                 // update.select("foreignObject")
                 // .transition()
-                // .duration(500) // Fade in duration
+                //.transition().duration(d => d.duration).delay(d => d.delay) // Fade in duration
                 // .style("opacity", 0)
                 // .each(function (d) {
                 //   const element = this;
@@ -169,22 +178,30 @@ export function graphics(element, data) {
     element.selectAll("g.graphic")
         .data(data, d => d.id)
         .join(
-            enter => enter.append("g")
-                .attr("class", "graphic")
-                .attr("transform", d => `scale(${d.scaling ?? 1}) translate(${d.position[0]} ${d.position[1]})`)
+            enter => enter
                 .append("g")
-                .attr("transform", d => `rotate(${d.rotation ?? 0}, 50, 50)`)
+                .attr("class", "position_x")
+                .attr("transform", d => `translate(${d.position[0]} 0)`)
+                .append("g")
+                .attr("class", "position_y")
+                .attr("transform", d => `translate(0 ${d.position[1]})`)
+                .append("g")
+                .attr("class", "scaling")
+                .attr("transform", d => `scale(${d.scaling})`)
+                .append("g")
+                .attr("class", "rotation")
+                .attr("transform", d => `rotate(${d.rotation}, 50, 50)`)
                 .html(d => d.data)
                 .transition()
                 .attr("opacity", 1),
             update => {
-                update
+                update.select("g.position_x").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `translate(${d.position[0]} 0)`);
+                update.select("g.position_y").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `translate(0 ${d.position[1]})`);
+                update.select("g.scaling").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `scale(${d.scaling})`);
+                update.select("g.rotation")
                     .transition()
-                    .attr("transform", d => `scale(${d.scaling ?? 1}) translate(${d.position[0]} ${d.position[1]})`);
-                update.select("g")
-                    // .html(d => d.data)
-                    .transition()
-                    .duration(2000)
+                    .duration(d => d.duration)
+                    .delay(d => d.delay)
                     .attrTween("transform", function (d) {
                         const px = 50; // x-coordinate of the arbitrary point
                         const py = 50; // y-coordinate of the arbitrary point

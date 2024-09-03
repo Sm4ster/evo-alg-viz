@@ -1,5 +1,6 @@
 import * as math from "mathjs";
 import * as _ from 'lodash'
+import {defaultValues} from "../../components/defaults.js";
 
 export default class {
     animation = {
@@ -11,8 +12,8 @@ export default class {
 
     _start_state = {
         viewbox: {
-            x: 0,
-            y: 0,
+            x: -1,
+            y: 1,
             zoom: 1,
             graph_rotation: 0,
             algorithm_rotation: 0,
@@ -73,27 +74,23 @@ export default class {
 
 
     fill_step_cache() {
-        const attributes = ['duration', 'delay', "transition", "rotation_bias"]
+        const attributes = ['duration', 'delay', "scaling", "transition", "rotation_bias", "innerClass"]
         const exceptions = ["Q", "m", "C", "sigma", "r", "color", "coords", "overlay", "class"]
 
         let step_cache = [];
 
         let cur_state = _.merge({}, this._start_state, this.start_state)
-        // console.log("cur_state:", cur_state)
-        let exp_state = expandValues(_.cloneDeep(cur_state), [...attributes, ...exceptions])
-        // console.log("exp_state:", exp_state)
-        exp_state = inheritAttributes(exp_state, this.animation, attributes, exceptions);
+
+        let exp_state = applyDefaultValues(_.cloneDeep(cur_state), this.animation, defaultValues)
 
         step_cache.push(exp_state)
 
-        // console.log(step_cache)
 
         for (let cur_step = 0; cur_step < this.steps.length; cur_step++) {
             cur_state = _.merge({}, cur_state, this.steps[cur_step](cur_state));
 
             // fill everything with delay and duration
-            exp_state = expandValues(_.cloneDeep(cur_state), [...attributes, ...exceptions])
-            exp_state = inheritAttributes(exp_state, this.animation, attributes, exceptions);
+            exp_state = applyDefaultValues(_.cloneDeep(cur_state), this.animation, defaultValues)
 
             step_cache.push(exp_state)
         }
@@ -106,62 +103,49 @@ export default class {
 }
 
 
+function applyDefaultValues(target, defaultValues, defaultMap) {
+    defaultMap.forEach(item => {
+        const path = item.path.split('.');
+        let defaults = {}
 
-function expandValues(obj, exceptions) {
-    for (const key in obj) {
-        if (key === "value" || exceptions.includes(key)) continue;
-        if (obj.hasOwnProperty(key) && typeof obj[key] === 'object') {
-            if (!Array.isArray(obj[key])) obj[key] = expandValues(obj[key], exceptions)
-            else {
-                obj[key].map(e => expandValues(e, exceptions))
+        // Collect default values that need to be inherited
+        for (let key in item.defaults) {
+            if (item.defaults[key] === "inherit") {
+                defaults[key] = defaultValues[key];
             }
-        } else {
-            obj[key] = {value: obj[key]};
         }
-    }
 
-    return obj;
-}
+        function applyDefaultsRecursively(current, pathIndex) {
+            const currentKey = path[pathIndex];
 
-
-function inheritAttributes(obj, parentAttrs, attributesToInherit, exceptions) {
-
-    const currentAttrs = {...parentAttrs};
-    // Iterate over each key in the current object
-    if(typeof obj === 'object' && !Array.isArray(obj)){
-        attributesToInherit.forEach(attr => {
-            // If the attribute is explicitly set on the current object, update the currentAttrs
-            if (obj[attr] !== undefined) {
-                currentAttrs[attr] = obj[attr];
-            } else {
-                // Otherwise, inherit from the parent
-                obj[attr] = currentAttrs[attr];
-            }
-        });
-    }
-
-    for (const key in obj) {
-        if (key === "value" || exceptions.includes(key)) continue;
-        if (obj.hasOwnProperty(key) && typeof obj[key] === 'object') {
-            // Recursively apply to nested objects, passing down the current attributes
-            if (!Array.isArray(obj[key])) {
-
-                // Inherit attributes from parent if not explicitly set on the child
-                attributesToInherit.forEach(attr => {
-                    // If the attribute is explicitly set on the current object, update the currentAttrs
-                    if (obj[key][attr] !== undefined) {
-                        currentAttrs[attr] = obj[key][attr];
-                    } else if ("value" in obj[key]) {
-                        // Otherwise, inherit from the parent
-                        obj[key][attr] = currentAttrs[attr];
+            if (currentKey !== undefined) {
+                if (currentKey === '*') {
+                    for (let i = 0; i < current.length; i++) {
+                        current[i] = applyDefaultsRecursively(current[i], pathIndex + 1);
                     }
-                });
-                obj[key] = inheritAttributes(obj[key], currentAttrs, attributesToInherit, exceptions);
+                } else current[currentKey] = applyDefaultsRecursively(current[currentKey], pathIndex + 1);
+                return current
             } else {
-                obj[key] = obj[key].map(e =>  inheritAttributes(e, currentAttrs, attributesToInherit, exceptions));
+                // Apply defaults to the final property in the path
+                if (_.isPlainObject(current)) {
+                    return {
+                        ...item.defaults,
+                        ...defaults,
+                        ...current // Merge existing values with defaults
+                    };
+                } else {
+                    return {
+                        value: current,
+                        ...item.defaults,
+                        ...defaults,
+                        ...current // Merge existing values with defaults
+                    };
+                }
             }
         }
-    }
-    return obj;
-}
 
+        target = applyDefaultsRecursively(target, 0);
+    });
+
+    return target
+}

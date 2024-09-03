@@ -377,6 +377,7 @@ export default {
     update(data) {
       console.log("data:", data)
 
+
       viewBox(d3.select(this.$refs.svg), data.viewbox, this.base_width, this.base_height)
 
 
@@ -385,7 +386,7 @@ export default {
 
       // math and formulas
       equations(d3.select("#equations"), data.equations)
-
+      return
 
       // rotation of the graph and algorithm
       d3.select("#graph")
@@ -402,12 +403,12 @@ export default {
 
 
       // axis
-      x_axis(d3.select("#x_axis"), data.canvas.x_axis, data.viewbox.scaling.value, this.width)
-      y_axis(d3.select("#y_axis"), data.canvas.y_axis, data.viewbox.scaling.value, this.height)
+      x_axis(d3.select("#x_axis"), data.canvas.x_axis, data.viewbox.scaling, this.width)
+      y_axis(d3.select("#y_axis"), data.canvas.y_axis, data.viewbox.scaling, this.height)
 
       // centerpoint and levelsets
       if (data.canvas.centerpoint) centerpoint(d3.select('#levelsets'))
-      if (data.canvas.levelsets) levelsets(d3.select('#levelsets'), {matrix: data.algorithm.Q,}, data.viewbox.scaling.value)
+      if (data.canvas.levelsets) levelsets(d3.select('#levelsets'), {matrix: data.algorithm.Q,}, data.viewbox.scaling)
 
       // one level
       single_level(d3.select("levelsets"), 1, data.scaling)
@@ -449,7 +450,7 @@ export default {
             color: '#ea580c'
           } : {},
           'm_dot',
-          data.viewbox.scaling.value
+          data.viewbox.scaling
       )
 
 
@@ -464,7 +465,7 @@ export default {
                 matrix: math.multiply(data.algorithm.sigma, data.algorithm.C)
               } : {},
           'std_dev',
-          data.viewbox.scaling.value
+          data.viewbox.scaling
       )
 
 
@@ -481,7 +482,7 @@ export default {
               }
             }),
             'population',
-            data.viewbox.scaling.value
+            data.viewbox.scaling
         )
       }
     },

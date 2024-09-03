@@ -35,7 +35,7 @@ export default class OnePlusOneES extends parentAnimation {
         },
 
         viewbox: {
-            zoom: 1,
+            zoom: {value: 1, duration: 500},
             graph_rotation: 0,
             algorithm_rotation: 0,
             scaling: 1,
@@ -47,42 +47,66 @@ export default class OnePlusOneES extends parentAnimation {
 
         equations: [
             {
+                innerClass: "bg-black",
                 class: "text-indigo-700",
-                position: [300, -350],
+                scaling: 1,
+                x: 300,
+                y: -350,
                 value: "0. \\ \\textbf{for} \\ t=1,2,..., \\textit{until satisfied} \\ \\textbf{do}"
             },
             {
+                innerClass: "bg-black",
                 class: "text-indigo-700",
-                position: [300, -320],
+                x: 300,
+                y: -320,
+                scaling: 1,
                 value: "1. \\quad x_t \\sim m_t + \\sigma_t \\cdot \\mathcal{N}(0, I)"
             },
             {
-                position: [300, -290],
+                innerClass: "bg-black",
+                x: 300,
+                y: -290,
+                scaling: 1,
                 class: "",
                 value: "2. \\quad \\textbf{if} \\ f(x_t) \\leq f(m_t) \\ \\textbf{then}"
             },
             {
-                position: [300, -260],
+                innerClass: "bg-black",
+                x: 300,
+                y: -260,
+                scaling: 1,
                 class: "",
                 value: "3. \\qquad m_{t+1} \\leftarrow x_t"
             },
             {
-                position: [300, -230],
+                innerClass: "bg-black",
+                x: 300,
+                y: -230,
+                scaling: 1,
                 class: "",
                 value: "4. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha"
             },
             {
-                position: [300, -200],
+                innerClass: "",
+                x: 300,
+                y: -200,
+                scaling: 1,
                 class: "",
                 value: "5. \\quad \\textbf{else}"
             },
             {
-                position: [300, -170],
+                innerClass: "",
+                x: 300,
+                y: -170,
+                scaling: 1,
                 class: "",
                 value: "6. \\qquad m_{t+1} \\leftarrow m_t"
             },
             {
-                position: [300, -140],
+                innerClass: "",
+                x: 300,
+                y: -140,
+                scaling: 1,
                 class: "",
                 value: "7. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha^{-1/4}"
             },
@@ -101,11 +125,11 @@ export default class OnePlusOneES extends parentAnimation {
                 duration: 1500,
                 value: 125
             }
-            viewbox.zoom = {
-                delay: 2000,
-                duration: 2000,
-                value: 2
-            }
+            // viewbox.zoom = {
+            //     delay: 2000,
+            //     duration: 2000,
+            //     value: 2
+            // }
         },
         ({algorithm, equations}) => {
             let distribution = MultivariateNormal(algorithm.m, math.multiply(algorithm.sigma, algorithm.C));
