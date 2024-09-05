@@ -101,21 +101,22 @@ export function viewBox(element, data, base_width, base_height) {
 }
 
 export function equations(element, data) {
-    element.selectAll("g")
+    element.selectAll("g.equation")
         .data(data, d => d.id)
         .join(
             enter => {
                 enter.append("g")
                     .attr("id", d => d.id)
+                    .attr("class", "equation")
                     .append("g")
                     .attr("class", "position_x")
                     .attr("transform", d => `translate(${d.x.value} 0)`)
                     .append("g")
                     .attr("class", "position_y")
-                    .attr("transform", d => `translate(0 ${d.y})`)
+                    .attr("transform", d => `translate(0 ${d.y.value})`)
                     .append("g")
                     .attr("class", "scaling")
-                    .attr("transform", d => `scale(${d.scaling})`)
+                    .attr("transform", d => `scale(${d.scaling.value})`)
                     .append("g")
                     .attr("class", "rotation")
                     .attr("transform", d => `rotate(${d.rotation.value})`)
@@ -132,42 +133,44 @@ export function equations(element, data) {
                     .attr("opacity", 1)
             },
             update => {
-                update.select("g.position_x").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `translate(${d.x} 0)`);
-                update.select("g.position_y").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `translate(0 ${d.y})`);
-                update.select("g.scaling").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `scale(${d.scaling})`);
-                update.select("g.rotation").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `scale(${d.rotation})`);
+                update.transition().attr("opacity", 0.5);
+                console.log("data from within:", update)
+                // update.select("g.position_x").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `translate(${d.x.value} 0)`);
+                // update.select("g.position_y").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `translate(0 ${d.y.value})`);
+                // update.select("g.scaling").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `scale(${d.scaling. value})`);
+                // update.select("g.rotation").transition().duration(d => {console.log("data from within", d);return d.rotation.duration}).delay(d => d.rotation.delay).attr("transform", d => `rotate(${d.rotation.value})`);
 
-                const interpolateNumber = NumberInterpolator("f(5.1)", "f(10)");
-                update.select("foreignObject").transition()
-                    .transition().duration(d => d.duration).delay(d => d.delay)
-                    .tween("dataTween", function (d) {
-                        const element = this;
-                        return (t) => {
-                            const interpolatedString = interpolateNumber(t);
-                            element.innerHTML = katex.renderToString(String(interpolatedString));
-                        };
-                    });
+                // const interpolateNumber = NumberInterpolator("f(5.1)", "f(10)");
+                // update.select("foreignObject").transition()
+                //     .transition().duration(d => d.duration).delay(d => d.delay)
+                //     .tween("dataTween", function (d) {
+                //         const element = this;
+                //         return (t) => {
+                //             const interpolatedString = interpolateNumber(t);
+                //             element.innerHTML = katex.renderToString(String(interpolatedString));
+                //         };
+                //     });
 
                 // update.select("foreignObject")
-                // .transition()
-                //.transition().duration(d => d.duration).delay(d => d.delay) // Fade in duration
-                // .style("opacity", 0)
-                // .each(function (d) {
-                //   const element = this;
-                //   setTimeout(() => {
-                //     element.innerHTML = katex.renderToString(d.text);
-                //     d3.select(element)
-                //         .transition()
-                //         .duration(200) // Fade in duration
-                //         .style("opacity", 1);
-                //   }, 500)
-                // })
+                //     .transition().duration(d => d.duration).delay(d => d.delay) // Fade in duration
+                //     .style("opacity", 0)
+                //     .each(function (d) {
+                //         const element = this;
+                //         setTimeout(() => {
+                //             element.innerHTML = katex.renderToString(d.text);
+                //             d3.select(element)
+                //                 .transition()
+                //                 .duration(200) // Fade in duration
+                //                 .style("opacity", 1);
+                //         }, 500)
+                //     })
 
                 // let bbox = el.node().firstElementChild.getBoundingClientRect()
                 // el.attr("width", bbox.width).attr("height", bbox.height)
 
                 return update;
-            }
+            },
+            exit => exit.remove() // Make sure to remove elements on exit
         )
 
 

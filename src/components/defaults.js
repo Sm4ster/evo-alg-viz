@@ -4,10 +4,16 @@ const defaultDefaults = {
 }
 export const defaultValues = [
     //Equations
-    {path: "equations.*", defaults: {rotation: 0}},
+    {path: "equations.*", defaults: {rotation: 0, x: 0, y: 0, scaling: 1}},
     {path: "equations.*.x", defaults: defaultDefaults},
+    {path: "equations.*.y", defaults: defaultDefaults},
     {path: "equations.*.rotation", defaults: defaultDefaults},
-    {path: "graphics.*", defaults: {...defaultDefaults, rotation: 0}},
+    {path: "equations.*.scaling", defaults: defaultDefaults},
+    {path: "graphics.*", defaults: {rotation: 0, x: 0, y: 0, scaling: 1}},
+    {path: "graphics.*.x", defaults: defaultDefaults},
+    {path: "graphics.*.y", defaults: defaultDefaults},
+    {path: "graphics.*.rotation", defaults: defaultDefaults},
+    {path: "graphics.*.scaling", defaults: defaultDefaults},
     //Viewbox
     {path: "viewbox.x", defaults: defaultDefaults},
     {path: "viewbox.y", defaults: defaultDefaults},
