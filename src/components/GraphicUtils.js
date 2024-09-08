@@ -43,7 +43,7 @@ function get_angles(startX, startY, endX, endY) {
 export function viewBox(element, data, base_width, base_height) {
 
     //TODO set on end the right values to vuejs
-    console.log("viewbox data:", data)
+    // console.log("viewbox data:", data)
 
     // transition x
     element.select("#viewbox_x").transition()
@@ -55,6 +55,7 @@ export function viewBox(element, data, base_width, base_height) {
             let initialValue = parseTransform(element.select("#viewbox_x").node().getAttribute("transform")).translateX;
 
             // Interpolators for width and height
+            console.log("viewbox", initialValue, data.x.value)
             const interpolator = d3.interpolateNumber(initialValue, data.x.value);
 
             return (t) => {
@@ -88,7 +89,6 @@ export function viewBox(element, data, base_width, base_height) {
             let initialViewBox = element.node().getAttribute("viewBox").split(" ").map(Number);
             let [initialX, initialY, initialWidth, initialHeight] = initialViewBox;
 
-            console.log(initialViewBox)
             // Interpolators for width and height
             const widthInterpolator = d3.interpolateNumber(initialWidth, data.zoom.value * base_width);
             const heightInterpolator = d3.interpolateNumber(initialHeight, data.zoom.value * base_height);
@@ -98,16 +98,33 @@ export function viewBox(element, data, base_width, base_height) {
                 return `0 0 ${widthInterpolator(t)} ${heightInterpolator(t)}`;
             };
         });
+
+    console.log("element", element)
+    element.select("#container").transition()
+        .duration(data.zoom.duration)
+        .delay(data.zoom.delay)
+        .attrTween("transform", function () {
+            let initialValue = parseTransform(element.select("#viewbox_y").node().getAttribute("transform"))
+
+            // Interpolators for width and height
+            console.log("container width:", (base_width * data.zoom.value)/2)
+            const interpolatorWidth = d3.interpolateNumber(initialValue.translateX, (base_width * data.zoom.value)/2);
+            const interpolatorHeight = d3.interpolateNumber(initialValue.translateY, (base_height * data.zoom.value)/2);
+
+            return (t) => {
+                return `translate(${interpolatorWidth(t)} ${interpolatorHeight(t)})`;
+            };
+        });
+
 }
 
 export function equations(element, data) {
     element.selectAll("g.equation")
-        .data(data, d => d.id)
+        .data(data)
         .join(
             enter => {
                 enter.append("g")
-                    .attr("id", d => d.id)
-                    .attr("class", "equation")
+                    .attr("class", "equation text-white")
                     .append("g")
                     .attr("class", "position_x")
                     .attr("transform", d => `translate(${d.x.value} 0)`)
@@ -120,7 +137,6 @@ export function equations(element, data) {
                     .append("g")
                     .attr("class", "rotation")
                     .attr("transform", d => `rotate(${d.rotation.value})`)
-                    .attr("class", `text-white`)
                     .append("foreignObject")
                     .attr("class", d => `overflow-visible whitespace-nowrap ${d.class}`)
                     .attr("width", 1)
@@ -133,40 +149,39 @@ export function equations(element, data) {
                     .attr("opacity", 1)
             },
             update => {
-                update.transition().attr("opacity", 0.5);
-                console.log("data from within:", update)
-                // update.select("g.position_x").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `translate(${d.x.value} 0)`);
-                // update.select("g.position_y").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `translate(0 ${d.y.value})`);
-                // update.select("g.scaling").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `scale(${d.scaling. value})`);
-                // update.select("g.rotation").transition().duration(d => {console.log("data from within", d);return d.rotation.duration}).delay(d => d.rotation.delay).attr("transform", d => `rotate(${d.rotation.value})`);
+                update.select("g.position_x").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `translate(${d.x.value} 0)`);
+                update.select("g.position_y").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `translate(0 ${d.y.value})`);
+                update.select("g.scaling").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `scale(${d.scaling.value})`);
+                update.select("g.rotation").transition().duration(d => d.rotation.duration).delay(d => d.rotation.delay).attr("transform", d => `rotate(${d.rotation.value})`);
 
-                // const interpolateNumber = NumberInterpolator("f(5.1)", "f(10)");
-                // update.select("foreignObject").transition()
-                //     .transition().duration(d => d.duration).delay(d => d.delay)
-                //     .tween("dataTween", function (d) {
-                //         const element = this;
-                //         return (t) => {
-                //             const interpolatedString = interpolateNumber(t);
-                //             element.innerHTML = katex.renderToString(String(interpolatedString));
-                //         };
-                //     });
+                if (data.transition === "interpolate") {
+                    const interpolateNumber = NumberInterpolator("f(5.1)", "f(10)");
+                    update.select("foreignObject").transition()
+                        .transition().duration(d => d.duration).delay(d => d.delay)
+                        .tween("dataTween", function (d) {
+                            const element = this;
+                            return (t) => {
+                                const interpolatedString = interpolateNumber(t);
+                                element.innerHTML = katex.renderToString(String(interpolatedString));
+                            };
+                        });
+                }
 
-                // update.select("foreignObject")
-                //     .transition().duration(d => d.duration).delay(d => d.delay) // Fade in duration
-                //     .style("opacity", 0)
-                //     .each(function (d) {
-                //         const element = this;
-                //         setTimeout(() => {
-                //             element.innerHTML = katex.renderToString(d.text);
-                //             d3.select(element)
-                //                 .transition()
-                //                 .duration(200) // Fade in duration
-                //                 .style("opacity", 1);
-                //         }, 500)
-                //     })
-
-                // let bbox = el.node().firstElementChild.getBoundingClientRect()
-                // el.attr("width", bbox.width).attr("height", bbox.height)
+                if (data.transition === "replace") {
+                    update.select("foreignObject")
+                        .transition().duration(d => d.duration).delay(d => d.delay) // Fade in duration
+                        .style("opacity", 0)
+                        .each(function (d) {
+                            const element = this;
+                            setTimeout(() => {
+                                element.innerHTML = katex.renderToString(d.text);
+                                d3.select(element)
+                                    .transition()
+                                    .duration(200) // Fade in duration
+                                    .style("opacity", 1);
+                            }, 500)
+                        })
+                }
 
                 return update;
             },

@@ -35,7 +35,9 @@ export default class OnePlusOneES extends parentAnimation {
         },
 
         viewbox: {
-            zoom: {value: 1, duration: 500},
+            zoom: 0.2,
+            x: 300,
+            y: 350,
             graph_rotation: 0,
             algorithm_rotation: 0,
             scaling: 1,
@@ -47,7 +49,6 @@ export default class OnePlusOneES extends parentAnimation {
 
         equations: [
             {
-                id: "asdadas",
                 innerClass: "bg-black",
                 class: "text-indigo-700",
                 scaling: 1,
@@ -55,69 +56,69 @@ export default class OnePlusOneES extends parentAnimation {
                 y: -350,
                 value: "0. \\ \\textbf{for} \\ t=1,2,..., \\textit{until satisfied} \\ \\textbf{do}"
             },
-            // {
-            //     innerClass: "bg-black",
-            //     class: "text-indigo-700",
-            //     x: 300,
-            //     y: -320,
-            //     scaling: 1,
-            //     value: "1. \\quad x_t \\sim m_t + \\sigma_t \\cdot \\mathcal{N}(0, I)"
-            // },
-            // {
-            //     innerClass: "bg-black",
-            //     x: 300,
-            //     y: -290,
-            //     scaling: 1,
-            //     class: "",
-            //     value: "2. \\quad \\textbf{if} \\ f(x_t) \\leq f(m_t) \\ \\textbf{then}"
-            // },
-            // {
-            //     innerClass: "bg-black",
-            //     x: 300,
-            //     y: -260,
-            //     scaling: 1,
-            //     class: "",
-            //     value: "3. \\qquad m_{t+1} \\leftarrow x_t"
-            // },
-            // {
-            //     innerClass: "bg-black",
-            //     x: 300,
-            //     y: -230,
-            //     scaling: 1,
-            //     class: "",
-            //     value: "4. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha"
-            // },
-            // {
-            //     innerClass: "",
-            //     x: 300,
-            //     y: -200,
-            //     scaling: 1,
-            //     class: "",
-            //     value: "5. \\quad \\textbf{else}"
-            // },
-            // {
-            //     innerClass: "",
-            //     x: 300,
-            //     y: -170,
-            //     scaling: 1,
-            //     class: "",
-            //     value: "6. \\qquad m_{t+1} \\leftarrow m_t"
-            // },
-            // {
-            //     innerClass: "",
-            //     x: 300,
-            //     y: -140,
-            //     scaling: 1,
-            //     class: "",
-            //     value: "7. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha^{-1/4}"
-            // },
+            {
+                innerClass: "bg-black",
+                class: "text-indigo-700",
+                x: 300,
+                y: -320,
+                scaling: 1,
+                value: "1. \\quad x_t \\sim m_t + \\sigma_t \\cdot \\mathcal{N}(0, I)"
+            },
+            {
+                innerClass: "bg-black",
+                x: 300,
+                y: -290,
+                scaling: 1,
+                class: "",
+                value: "2. \\quad \\textbf{if} \\ f(x_t) \\leq f(m_t) \\ \\textbf{then}"
+            },
+            {
+                innerClass: "bg-black",
+                x: 300,
+                y: -260,
+                scaling: 1,
+                class: "",
+                value: "3. \\qquad m_{t+1} \\leftarrow x_t"
+            },
+            {
+                innerClass: "bg-black",
+                x: 300,
+                y: -230,
+                scaling: 1,
+                class: "",
+                value: "4. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha"
+            },
+            {
+                innerClass: "",
+                x: 300,
+                y: -200,
+                scaling: 1,
+                class: "",
+                value: "5. \\quad \\textbf{else}"
+            },
+            {
+                innerClass: "",
+                x: 300,
+                y: -170,
+                scaling: 1,
+                class: "",
+                value: "6. \\qquad m_{t+1} \\leftarrow m_t"
+            },
+            {
+                innerClass: "",
+                x: 300,
+                y: -140,
+                scaling: 1,
+                class: "",
+                value: "7. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha^{-1/4}"
+            },
         ],
     }
 
     steps = [
         ({viewbox, equations}) => {
         console.log(equations[0])
-            equations[0].rotation = {value: 45, delay: 200, duration: 2000}
+            // equations[0].rotation = {value: 45, delay: 200, duration: 2000}
 
             // viewbox.x = {
             //     delay: 0,

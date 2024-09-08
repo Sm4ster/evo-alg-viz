@@ -12,8 +12,8 @@ export default class {
 
     _start_state = {
         viewbox: {
-            x: -1,
-            y: 1,
+            x: 0,
+            y: 0,
             zoom: 1,
             graph_rotation: 0,
             algorithm_rotation: 0,
@@ -59,6 +59,9 @@ export default class {
         }
     }
 
+    start_state = {}
+    steps = []
+
     fitness(x, Q = false) {
         if (Q === false) {
             Q = _.merge({}, this._start_state, this.start_state).algorithm.Q
@@ -98,8 +101,6 @@ export default class {
         return step_cache
     }
 
-    start_state = {}
-    steps = []
 }
 
 

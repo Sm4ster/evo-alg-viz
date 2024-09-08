@@ -376,11 +376,9 @@ export default {
     },
     update(data) {
       console.log("data:", data)
-      console.log("equation[0]:", data.equations[0])
 
-
+      // viewbox
       viewBox(d3.select(this.$refs.svg), data.viewbox, this.base_width, this.base_height)
-
 
       // graphics and icons
       graphics(d3.select("#graphics"), data.graphics)
