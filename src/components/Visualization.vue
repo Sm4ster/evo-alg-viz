@@ -8,15 +8,7 @@
       <g id="viewbox_x" :transform="`translate(${-x.value} 0)`">
         <g id="viewbox_y" :transform="`translate(0 ${-y.value})`">
           <g id="container" :transform="`translate(${width/2} ${height/2})`">
-            <g id="graph" transform="rotate(0)">
-              <g id="x_axis"></g>
-              <g id="y_axis"></g>
-              <g id="levelsets"></g>
-            </g>
-            <g id="algorithm" transform="rotate(0)">
-              <g id="density"></g>
-              <g id="population"></g>
-            </g>
+            <g id="modules"></g>
             <g id="equations"></g>
             <g id="graphics"></g>
           </g>
@@ -68,36 +60,6 @@
                       </div>
                       <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">loop settings</h3>
                     </div>
-                    <div class="flex space-x-3">
-                      <div class="h-full flex flex-col justify-end">
-                        <div class="flex space-x-3">
-                          <div class="flex flex-col space-y-1">
-                            <ParameterButton class="w-40" v-model="params.A" name="A"/>
-                            <ParameterButton class="w-40" v-model="params.B" name="B"/>
-                            <ParameterButton class="w-40" v-model="params.C" name="C"/>
-                          </div>
-                          <div class="flex flex-col space-y-1">
-                            <ParameterButton class="w-40" v-model="params.m[0]" name="m0"/>
-                            <ParameterButton class="w-40" v-model="params.m[1]" name="m1"/>
-                            <ParameterButton class="w-40" v-model="params.sigma" name="sigma"/>
-                          </div>
-                        </div>
-                        <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">algorithm
-                          parameters</h3>
-                      </div>
-
-                      <div class="h-full flex flex-col justify-end">
-                        <div class="flex space-x-3">
-                          <div class="flex flex-col space-y-1">
-                            <ParameterButton class="w-40" v-model="hessian.A" name="A"/>
-                            <ParameterButton class="w-40" v-model="hessian.B" name="B"/>
-                            <ParameterButton class="w-40" v-model="hessian.C" name="C"/>
-                          </div>
-                        </div>
-                        <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">fitness
-                          parameters</h3>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </DialogPanel>
@@ -120,30 +82,13 @@
           {{ i }}
         </button>
       </div>
-      <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1 bg-black">transformation steps</h3>
+      <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1 bg-black">steps</h3>
     </div>
-    <!--            <div class="flex space-x-10 bg-black p-5 rounded absolute top-0 left-0">-->
-    <!--              <span class="text-xl" v-if="steps[current_step].show_C"-->
-    <!--                    v-html="katex.renderToString(`C=\\begin{bmatrix} ${decimals(steps[current_step].C[0][0])} & ${decimals(steps[current_step].C[0][1])}  \\\\ ${decimals(steps[current_step].C[1][0])} & ${decimals(steps[current_step].C[1][1])} \\end{bmatrix}`)"/>-->
-    <!--              <span class="text-xl" v-if="steps[current_step].show_m"-->
-    <!--                    v-html="katex.renderToString(`m=\\begin{bmatrix} ${decimals(steps[current_step].m[0])} \\\\ ${decimals(steps[current_step].m[1])} \\end{bmatrix}`)"/>-->
-    <!--              <span class="text-xl my-auto" v-if="steps[current_step].show_sigma"-->
-    <!--                    v-html="katex.renderToString(`\\sigma= ${decimals(steps[current_step].sigma)}`)"/>-->
-    <!--            </div>-->
-
-    <!--    <div v-for="overlay in steps[current_step].overlay" class="flex flex-col p-5 rounded absolute top-0 right-0 bg-black text-white">-->
-    <!--      <div v-for="(row, i) in overlay.latex"-->
-    <!--           :class="['text-xl p-1'] "-->
-    <!--      >-->
-    <!--        <span v-html="katex.renderToString(row.string)"></span>-->
-    <!--      </div>-->
-    <!--    </div>-->
   </div>
 </template>
 
 <script>
 import * as d3 from 'd3'
-import * as math from 'mathjs'
 import katex from "katex";
 import {ref} from 'vue'
 
@@ -158,20 +103,7 @@ import ParameterButton from "./misc/ParameterButton.vue";
 import Toggle from "./misc/Toggle.vue";
 import RadioSelect from "./misc/RadioSelect.vue";
 import {Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot} from '@headlessui/vue'
-import {
-  levelsets,
-  ellipse,
-  circle,
-  line,
-  gaussian_density,
-  single_level,
-  x_axis,
-  y_axis,
-  graphics,
-  equations,
-  viewBox,
-  centerpoint
-} from "./GraphicUtils.js";
+import {graphics, equations, viewBox} from "./GraphicUtils.js";
 
 
 const algorithms = [
@@ -189,7 +121,7 @@ export default {
   components: {RadioSelect, Toggle, ParameterButton, Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot},
   data() {
     return {
-      state_generator_id: 0,
+      sequence_id: 0,
 
       steps: [],
       start_state: "manual",
@@ -199,19 +131,7 @@ export default {
       base_width: null,
       base_height: null,
 
-      hessian: {
-        A: 1,
-        B: 0,
-        C: 1,
-      },
 
-      params: {
-        A: 1,
-        B: 0,
-        C: 1,
-        m: [1, -1],
-        sigma: 1
-      },
       show: {
         steps: true,
         settings: false,
@@ -226,33 +146,16 @@ export default {
     }
   },
   watch: {
-    state_generator_id() {
-      this.start_state = this.state_generator.app_defaults.start_state;
-      this.steps = this.state_generator.set_start({
-        m: [...this.params.m],
-        C: [[this.params.A, this.params.B], [this.params.B, this.params.C]],
-        sigma: this.params.sigma,
-        Q: [[this.hessian.A, this.hessian.B], [this.hessian.B, this.hessian.C]]
-      })
+    sequence_id() {
+      this.start_state = this.sequence.app_defaults.start_state;
       this.update({...this.steps[this.current_step], duration: 0});
     },
     current_step: function (step, old_step) {
       if (step === 0) {
         this.update_flag = false;
-        if (this.start_state === "random") this.set_random_start();
-        if (this.start_state === "prev_state") {
-          this.params.m = [...this.steps[this.steps.length - 1].algorithm.m]
-          this.params.A = this.steps[this.steps.length - 1].algorithm.C[0][0]
-          this.params.B = this.steps[this.steps.length - 1].algorithm.C[1][0]
-          this.params.C = this.steps[this.steps.length - 1].algorithm.C[1][1]
-          this.params.sigma = this.steps[this.steps.length - 1].algorithm.sigma
+        for(let module of this.sequence.modules){
+          module.loop()
         }
-        this.steps = this.state_generator.set_start({
-          m: [...this.params.m],
-          C: [[this.params.A, this.params.B], [this.params.B, this.params.C]],
-          sigma: this.params.sigma,
-          Q: [[this.hessian.A, this.hessian.B], [this.hessian.B, this.hessian.C]]
-        })
         this.update_flag = true;
       }
 
@@ -260,18 +163,7 @@ export default {
       else this.update({...this.steps[this.current_step], duration: 0})
 
     },
-    hessian: {
-      handler(params) {
-        this.steps = this.state_generator.set_start({
-          m: [...this.params.m],
-          C: [[this.params.A, this.params.B], [this.params.B, this.params.C]],
-          sigma: this.params.sigma,
-          Q: [[this.hessian.A, this.hessian.B], [this.hessian.B, this.hessian.C]]
-        })
-        this.update({...this.steps[this.current_step], duration: 0});
-      },
-      deep: true
-    },
+
     loop: {
       handler(params) {
         if (this.intervalId) {
@@ -286,20 +178,7 @@ export default {
       },
       deep: true
     },
-    params: {
-      handler(params) {
-        if (this.update_flag) {
-          this.steps = this.state_generator.set_start({
-            m: [...this.params.m],
-            C: [[this.params.A, this.params.B], [this.params.B, this.params.C]],
-            sigma: this.params.sigma,
-            Q: [[this.hessian.A, this.hessian.B], [this.hessian.B, this.hessian.C]]
-          })
-          this.update({...this.steps[this.current_step], duration: 0});
-        }
-      },
-      deep: true
-    }
+
   },
   created() {
     // Define reactive references using ref
@@ -307,13 +186,16 @@ export default {
     this.y = ref(0);
     this.zoom = ref(1);
 
-    this.start_state = this.state_generator.app_defaults.start_state;
-    this.steps = this.state_generator.set_start({
-      m: [...this.params.m],
-      C: [[this.params.A, this.params.B], [this.params.B, this.params.C]],
-      sigma: this.params.sigma,
-      Q: [[this.hessian.A, this.hessian.B], [this.hessian.B, this.hessian.C]]
-    })
+    this.steps = this.sequence.fill_step_cache()
+
+    // this.start_state = this.sequence.app_defaults.start_state;
+    // this.steps = this.sequence.set_start({
+    //   m: [...this.params.m],
+    //   C: [[this.params.A, this.params.B], [this.params.B, this.params.C]],
+    //   sigma: this.params.sigma,
+    //   Q: [[this.hessian.A, this.hessian.B], [this.hessian.B, this.hessian.C]]
+    // })
+    //
   },
   mounted() {
     document.addEventListener('keydown', this.keydown)
@@ -340,8 +222,8 @@ export default {
     svg.removeEventListener('mousemove', this.drag);
   },
   computed: {
-    state_generator() {
-      return algorithms[this.state_generator_id].class
+    sequence() {
+      return algorithms[this.sequence_id].class
     },
     algorithms() {
       return algorithms
@@ -358,137 +240,26 @@ export default {
 
   },
   methods: {
-    set_random_start() {
-      this.params.A = this.$_.random(0.1, 10)
-      this.params.C = this.$_.random(0.1, 10)
-
-      const upperBound = Math.sqrt(this.params.A * this.params.C);
-      // Generate a uniformly distributed random number between 0 and 1
-      const u = this.$_.random(0, 1, true);
-      // Transform it to be denser towards the edges
-      const t = Math.sin(Math.PI * u);
-      // Scale and shift to the range [-sqrt(AC), sqrt(AC)]
-      this.params.B = (2 * t - 1) * upperBound;
-
-      this.params.m[0] = this.$_.random(0, 2, true)
-      this.params.m[1] = this.$_.random(0, 2, true)
-      this.params.sigma = this.$_.random(1, 5, true)
-    },
     update(data) {
       console.log("data:", data)
 
       // viewbox
-      viewBox(d3.select(this.$refs.svg), data.viewbox, this.base_width, this.base_height)
+      viewBox(d3.select(this.$refs.svg), data.viewbox, this.base_width, this.base_height,
+          {x: this.x, y: this.y, zoom: this.zoom})
 
       // graphics and icons
       graphics(d3.select("#graphics"), data.graphics)
 
       // math and formulas
       equations(d3.select("#equations"), data.equations)
-      return
 
-      // rotation of the graph and algorithm
-      d3.select("#graph")
-          .transition()
-          .duration(data.viewbox.graph_rotation.duration)
-          .delay(data.viewbox.graph_rotation.delay)
-          .attr("transform", `rotate(${data.viewbox.graph_rotation.value})`);
-
-      d3.select("#algorithm")
-          .transition()
-          .duration(data.viewbox.algorithm_rotation.duration)
-          .delay(data.viewbox.algorithm_rotation.delay)
-          .attr("transform", `rotate(${data.viewbox.algorithm_rotation.value})`);
-
-
-      // axis
-      x_axis(d3.select("#x_axis"), data.canvas.x_axis, data.viewbox.scaling, this.width)
-      y_axis(d3.select("#y_axis"), data.canvas.y_axis, data.viewbox.scaling, this.height)
-
-      // centerpoint and levelsets
-      if (data.canvas.centerpoint) centerpoint(d3.select('#levelsets'))
-      if (data.canvas.levelsets) levelsets(d3.select('#levelsets'), {matrix: data.algorithm.Q,}, data.viewbox.scaling)
-
-      // one level
-      single_level(d3.select("levelsets"), 1, data.scaling)
-
-
-      // algorithm state
-      if (data.canvas.density.value) {
-        gaussian_density(
-            data.algorithm.m,
-            data.algorithm.sigma,
-            data.algorithm.C
-        );
+      // let modules update the canvas
+      for(let module of this.sequence.modules) {
+        console.log(module)
+        module.update(d3.select(`#modules #${module.id}`))
       }
 
-
-      if (data.m_line) {
-        line(
-            'm_line',
-            {
-              x: [0, data.algorithm.m[0]],
-              y: [0, data.algorithm.m[1]],
-              color: '#ea580c',
-              width: 2
-            },
-            d3.select('#alg_state'),
-            data.scaling
-        ) // Connection line between 0,0 and the distribution center
-      }
-
-
-      circle(
-          d3.select('#algorithm'),
-          data.canvas.m_dot.value ? {
-            duration: data.canvas.m_dot.duration,
-            delay: data.canvas.m_dot.delay,
-            transition: data.canvas.m_dot.transition,
-            coords: data.algorithm.m,
-            r: 2,
-            color: '#ea580c'
-          } : {},
-          'm_dot',
-          data.viewbox.scaling
-      )
-
-
-      ellipse(
-          d3.select('#algorithm'),
-          data.canvas.ellipse.value ?
-              {
-                duration: data.canvas.ellipse.duration,
-                rotation_bias: data.canvas.ellipse.rotation_bias,
-                transition: data.canvas.ellipse.transition,
-                center: data.algorithm.m,
-                matrix: math.multiply(data.algorithm.sigma, data.algorithm.C)
-              } : {},
-          'std_dev',
-          data.viewbox.scaling
-      )
-
-
-      if (data.algorithm.population) {
-        circle(
-            d3.select('#population'),
-
-            data.algorithm.population.map(d => {
-              return {
-                duration: data.duration,
-                transition: data.transition,
-                scaling: data.scaling,
-                ...d
-              }
-            }),
-            'population',
-            data.viewbox.scaling
-        )
-      }
     },
-    decimals(value, decimals = 2) {
-      return Math.round(value * Math.pow(10, decimals)) / Math.pow(10, decimals)
-    }
-    ,
     drag(e) {
       if (this.dragging) {
         this.x.value -= this.zoom.value * e.movementX

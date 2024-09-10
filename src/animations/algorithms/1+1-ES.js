@@ -4,6 +4,7 @@ import parentAnimation from "../lib/StateGenerator.js";
 import numeric from 'numeric';
 import MultivariateNormal from "multivariate-normal";
 import _ from "lodash";
+import EvolutionStrategies from "../../modules/EvolutionStrategies/module.js"
 
 // this is necessary for MultivariateNormal to work, do not change!!
 window.numeric = numeric;
@@ -11,29 +12,16 @@ window.numeric = numeric;
 
 export default class OnePlusOneES extends parentAnimation {
 
+    modules = [
+        new EvolutionStrategies
+    ]
+
+
     app_defaults = {
         start_state: "prev_state"
     }
 
     start_state = {
-        canvas: {
-            m_dot: true,
-            ellipse: true,
-            x_axis: {
-                line: true,
-                ticks: false,
-                tick_numbers: false
-            },
-            y_axis: {
-                line: true,
-                ticks: false,
-                tick_numbers: false
-            },
-            centerpoint: true,
-            levelsets: true,
-            density: true,
-        },
-
         viewbox: {
             zoom: 0.2,
             x: 300,
