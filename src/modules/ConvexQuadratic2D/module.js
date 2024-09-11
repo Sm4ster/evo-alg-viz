@@ -31,6 +31,8 @@ export default class {
         {path: "display.centerpoint", defaults: {...defaultDefaults, transition: "linear", rotation_bias: 0}},
         {path: "display.levelsets", defaults: {...defaultDefaults}},
         {path: "display.one_level", defaults: {...defaultDefaults}},
+        {path: "display.x_axis", defaults: {scaling: 1}},
+        {path: "display.x_axis.scaling", defaults: {...defaultDefaults}},
         {path: "display.x_axis.line", defaults: {...defaultDefaults}},
         {path: "display.x_axis.ticks", defaults: {...defaultDefaults}},
         {path: "display.x_axis.tick_numbers", defaults: {...defaultDefaults}},
@@ -56,6 +58,8 @@ export default class {
 
     update(element, data, metadata) {
         // get element
+        console.log("module data:", data)
+
         let graph = element.select("#graph")
 
         // rotation of the graph
@@ -65,9 +69,11 @@ export default class {
             .attr("transform", `rotate(${data.rotation.value})`);
 
 
-        // // axis
-        // x_axis(element.select("#x_axis"), data.canvas.x_axis, data.viewbox.scaling, metadata.width)
-        // y_axis(element.select("#y_axis"), data.canvas.y_axis, data.viewbox.scaling, metadata.height)
+        console.log("x_axis", element)
+
+        // axis
+        x_axis(element.select("#x_axis"), data.display.x_axis, data.display.x_axis.scaling.value, metadata.width)
+        // y_axis(element.select("#y_axis"), data.display.y_axis, data.scaling, metadata.height)
         //
         // // centerpoint and levelsets
         // if (data.value.centerpoint) centerpoint(d3.select('#levelsets'))

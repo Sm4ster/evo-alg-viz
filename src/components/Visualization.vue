@@ -149,6 +149,7 @@ export default {
     sequence_id() {
       this.start_state = this.sequence.app_defaults.start_state;
       this.update({...this.steps[this.current_step], duration: 0});
+
     },
     current_step: function (step, old_step) {
       if (step === 0) {
@@ -211,6 +212,7 @@ export default {
     svg.addEventListener('mouseup', this.stopDrag);
     svg.addEventListener('mousemove', this.drag);
 
+    this.init_sequence();
     this.update(this.steps[this.current_step]);
   },
   beforeUnmounted() {
@@ -254,12 +256,23 @@ export default {
       equations(d3.select("#equations"), data.equations)
 
       // let modules update the canvas
-      for(let module of this.sequence.modules) {
+      for (let module of this.sequence.modules) {
         console.log(module)
-        module.update(d3.select(`#modules #${module.name}`),data[module.name] )
+        module.update(d3.select(`#modules #${module.name}`), data[module.name], {
+          width: this.width,
+          height: this.height
+        })
       }
 
     },
+    init_sequence(){
+      console.log("asdas", d3.select("#modules"))
+      for(let module of this.sequence.modules) {
+        module.init(d3.select("#modules").append("g").attr("id", module.name))
+      }
+
+    },
+
     drag(e) {
       if (this.dragging) {
         this.x.value -= this.zoom.value * e.movementX
