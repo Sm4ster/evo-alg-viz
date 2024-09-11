@@ -41,10 +41,8 @@ function get_angles(startX, startY, endX, endY) {
 }
 
 export function viewBox(element, data, base_width, base_height, vars) {
-
-    //TODO set on end the right values to vuejs
-
     // transition x
+    console.log("viewbox data", data)
     element.select("#viewbox_x").transition()
         .duration(data.x.duration)
         .delay(data.x.delay)
@@ -52,12 +50,13 @@ export function viewBox(element, data, base_width, base_height, vars) {
         .attrTween("transform", function () {
                 // Initial values captured at the start of the transition
                 let initialValue = parseTransform(element.select("#viewbox_x").node().getAttribute("transform")).translateX;
+                console.log(initialValue, element.select("#viewbox_x"))
 
                 // Interpolators for width and height
-                const interpolator = d3.interpolateNumber(initialValue, data.x.value);
+                const interpolator = d3.interpolateNumber(initialValue, -data.x.value);
 
                 return (t) => {
-                    return `translate(${-interpolator(t)} 0)`;
+                    return `translate(${interpolator(t)} 0)`;
                 };
             }
         ).on("end", function () {
@@ -109,7 +108,8 @@ export function viewBox(element, data, base_width, base_height, vars) {
         .duration(data.zoom.duration)
         .delay(data.zoom.delay)
         .attrTween("transform", function () {
-            let initialValue = parseTransform(element.select("#viewbox_y").node().getAttribute("transform"))
+            let initialValue = parseTransform(element.select("#container").node().getAttribute("transform"))
+            console.log(initialValue)
 
             // Interpolators for width and height
             const interpolatorWidth = d3.interpolateNumber(initialValue.translateX, (base_width * data.zoom.value) / 2);

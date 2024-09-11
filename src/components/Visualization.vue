@@ -152,11 +152,11 @@ export default {
     },
     current_step: function (step, old_step) {
       if (step === 0) {
-        this.update_flag = false;
-        for(let module of this.sequence.modules){
-          module.loop()
-        }
-        this.update_flag = true;
+        // this.update_flag = false;
+        // for(let module of this.sequence.modules){
+        //   module.loop()
+        // }
+        // this.update_flag = true;
       }
 
       if (step === (old_step + 1)) this.update(this.steps[this.current_step]);
@@ -256,7 +256,7 @@ export default {
       // let modules update the canvas
       for(let module of this.sequence.modules) {
         console.log(module)
-        module.update(d3.select(`#modules #${module.id}`))
+        module.update(d3.select(`#modules #${module.name}`),data[module.name] )
       }
 
     },

@@ -5,57 +5,41 @@ export default class {
         display: {
             m_dot: true,
             ellipse: true,
-            x_axis: {
-                line: true,
-                ticks: false,
-                tick_numbers: false
-            },
-            y_axis: {
-                line: true,
-                ticks: false,
-                tick_numbers: false
-            },
-            centerpoint: true,
-            levelsets: true,
             density: true,
+            one_level: true
         },
+
+        algorithm: {
+            // data
+            m: [0, 0],
+            C: [[1, 0], [0, 1]],
+            sigma: 1,
+            population: [],
+        }
     }
 
-    init(svg){
-        // Graph background
-        const graph = svg.append("g").attr("id", "graph").attr("transform", "rotate(0)")
-        graph.append("g").attr("id", "x_axis")
-        graph.append("g").attr("id", "y_axis")
-        graph.append("g").attr("id", "levelsets")
+    defaults = [
+        {path: "display.m_line", defaults: defaultDefaults},
+        {path: "display.m_dot", defaults: {...defaultDefaults, transition: "linear", rotation_bias: 0}},
+        {path: "display.ellipse", defaults: {...defaultDefaults, transition: "linear", rotation_bias: 0}},
+        {path: "display.density", defaults: {...defaultDefaults, transition: "linear", rotation_bias: 0}},
+        {path: "display.one_level", defaults: {...defaultDefaults}},
+    ]
 
+    init(svg) {
         // Algorithm state
         const algorithm = svg.append("g").attr("id", "#algorithm").attr("transform", "rotate(0)")
         algorithm.append("g").attr("id", "#density")
         algorithm.append("g").attr("id", "#population")
     }
 
-    update(element, data, metadata){
-        // rotation of the graph and algorithm
-        element.select("#graph")
-            .transition()
-            .duration(data.viewbox.graph_rotation.duration)
-            .delay(data.viewbox.graph_rotation.delay)
-            .attr("transform", `rotate(${data.viewbox.graph_rotation.value})`);
-
+    update(element, data, metadata) {
+        // rotation of the algorithm
         element.select("#algorithm")
             .transition()
             .duration(data.viewbox.algorithm_rotation.duration)
             .delay(data.viewbox.algorithm_rotation.delay)
             .attr("transform", `rotate(${data.viewbox.algorithm_rotation.value})`);
-
-
-        // axis
-        x_axis(d3.select("#x_axis"), data.canvas.x_axis, data.viewbox.scaling, metadata.width)
-        y_axis(d3.select("#y_axis"), data.canvas.y_axis, data.viewbox.scaling, metadata.height)
-
-        // centerpoint and levelsets
-        if (data.canvas.centerpoint) centerpoint(d3.select('#levelsets'))
-        if (data.canvas.levelsets) levelsets(d3.select('#levelsets'), {matrix: data.algorithm.Q,}, data.viewbox.scaling)
 
         // one level
         single_level(d3.select("levelsets"), 1, data.scaling)

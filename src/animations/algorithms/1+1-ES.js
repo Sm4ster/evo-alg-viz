@@ -5,6 +5,7 @@ import numeric from 'numeric';
 import MultivariateNormal from "multivariate-normal";
 import _ from "lodash";
 import EvolutionStrategies from "../../modules/EvolutionStrategies/module.js"
+import ConvexQuadratic2D from "../../modules/ConvexQuadratic2D/module.js"
 
 // this is necessary for MultivariateNormal to work, do not change!!
 window.numeric = numeric;
@@ -13,7 +14,8 @@ window.numeric = numeric;
 export default class OnePlusOneES extends parentAnimation {
 
     modules = [
-        new EvolutionStrategies
+        new ConvexQuadratic2D,
+        // new EvolutionStrategies
     ]
 
 
@@ -23,16 +25,12 @@ export default class OnePlusOneES extends parentAnimation {
 
     start_state = {
         viewbox: {
-            zoom: 0.2,
-            x: 300,
-            y: 350,
+            zoom: 1,
+            x: 0,
+            y: 0,
             graph_rotation: 0,
             algorithm_rotation: 0,
             scaling: 1,
-        },
-
-        algorithm: {
-            C: [[1, 0.5], [0.5, 1]],
         },
 
         equations: [
@@ -104,25 +102,25 @@ export default class OnePlusOneES extends parentAnimation {
     }
 
     steps = [
-        ({viewbox, equations}) => {
-        console.log(equations[0])
-            // equations[0].rotation = {value: 45, delay: 200, duration: 2000}
+        ({viewbox, equations, ConvexQuadratic, EvolutionStrategies}) => {
 
-            // viewbox.x = {
-            //     delay: 0,
-            //     duration: 3000,
-            //     value: 250
-            // }
-            // viewbox.y = {
-            //     delay: 1500,
-            //     duration: 1500,
-            //     value: 125
-            // }
-            // viewbox.zoom = {
-            //     delay: 2000,
-            //     duration: 2000,
-            //     value: 2
-            // }
+            equations[0].rotation = {value: 45, delay: 4000, duration: 200}
+
+            viewbox.x = {
+                delay: 0,
+                duration: 3000,
+                value: 250
+            }
+            viewbox.y = {
+                delay: 1500,
+                duration: 1500,
+                value: 125
+            }
+            viewbox.zoom = {
+                delay: 2000,
+                duration: 2000,
+                value: 2
+            }
         },
         // ({algorithm, equations}) => {
         //     let distribution = MultivariateNormal(algorithm.m, math.multiply(algorithm.sigma, algorithm.C));

@@ -1,8 +1,5 @@
 <script setup>
 import Visualization from "./components/Visualization.vue";
-
-
-
 </script>
 
 

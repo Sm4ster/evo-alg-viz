@@ -3,7 +3,7 @@ import * as _ from 'lodash'
 import {defaultValues} from "../../components/defaults.js";
 
 export default class {
-    animation = {
+    base_defaults = {
         duration: 1000,
         delay: 0,
         transition: "linear", // linear, rotation
@@ -14,60 +14,14 @@ export default class {
         viewbox: {
             x: 0,
             y: 0,
-            zoom: 1,
-            graph_rotation: 0,
-            algorithm_rotation: 0,
-            scaling: 1,
+            zoom: 1
         },
-
-        canvas: {
-            // Visibility
-            m_line: false,
-            m_dot: false,
-            ellipse: false,
-            density: false,
-
-            x_axis: {
-                line: false,
-                ticks: false,
-                tick_numbers: false
-            },
-            y_axis: {
-                line: false,
-                ticks: false,
-                tick_numbers: false
-            },
-            centerpoint: false,
-            levelsets: false,
-            one_level: false,
-            state_overlay: false,
-            algorithm_overlay: true
-        },
-
         equations: [],
         graphics: [],
-
-        overlay: [],
-
-        algorithm: {
-            // data
-            Q: [[1, 0], [0, 1]], // fitness function params
-            m: [0, 0],
-            C: [[1, 0.5], [0.5, 1]],
-            sigma: 1,
-            population: [],
-        }
     }
 
     start_state = {}
     steps = []
-
-    fitness(x, Q = false) {
-        if (Q === false) {
-            Q = _.merge({}, this._start_state, this.start_state).algorithm.Q
-        }
-        return math.multiply(math.multiply(math.transpose(x), Q), x);
-    }
 
 
     set_start(state) {
@@ -77,23 +31,36 @@ export default class {
 
 
     fill_step_cache() {
-        const attributes = ['duration', 'delay', "scaling", "transition", "rotation_bias", "innerClass"]
-        const exceptions = ["Q", "m", "C", "sigma", "r", "color", "coords", "overlay", "class"]
-
         let step_cache = [];
 
+        // add default values to create a complete cur_state
         let cur_state = _.merge({}, this._start_state, this.start_state)
+        for (let module of this.modules) {
+            cur_state[module.name] = _.merge(module.options, cur_state[module.name])
+        }
 
-        let exp_state = applyDefaultValues(_.cloneDeep(cur_state), this.animation, defaultValues)
+
+        let exp_state = applyDefaultValues(_.cloneDeep(cur_state), this.base_defaults, defaultValues)
+
+        for (let module of this.modules) {
+            exp_state[module.name] =
+                applyDefaultValues(_.merge(module.options, cur_state[module.name]), this.base_defaults, module.defaults)
+        }
 
         step_cache.push(exp_state)
 
 
         for (let cur_step = 0; cur_step < this.steps.length; cur_step++) {
-            cur_state = _.merge({}, cur_state, this.steps[cur_step](cur_state));
+            // update the cur_state
+            this.steps[cur_step](cur_state)
 
-            // fill everything with delay and duration
-            exp_state = applyDefaultValues(_.cloneDeep(cur_state), this.animation, defaultValues)
+            // expand everything with its defaults
+            exp_state = applyDefaultValues(_.cloneDeep(cur_state), this.base_defaults, defaultValues)
+
+            for (let module of this.modules) {
+                exp_state[module.name] =
+                    applyDefaultValues(cur_state[module.name], this.base_defaults, module.defaults)
+            }
 
             step_cache.push(exp_state)
         }
