@@ -7,6 +7,7 @@ export default class {
 
     options = {
         rotation: 0,
+        scaling: 1,
 
         display: {
             x_axis: {
@@ -28,11 +29,10 @@ export default class {
 
     defaults = [
         {path: "rotation", defaults: {...defaultDefaults}},
+        {path: "scaling", defaults: {...defaultDefaults}},
         {path: "display.centerpoint", defaults: {...defaultDefaults, transition: "linear", rotation_bias: 0}},
         {path: "display.levelsets", defaults: {...defaultDefaults}},
         {path: "display.one_level", defaults: {...defaultDefaults}},
-        {path: "display.x_axis", defaults: {scaling: 1}},
-        {path: "display.x_axis.scaling", defaults: {...defaultDefaults}},
         {path: "display.x_axis.line", defaults: {...defaultDefaults}},
         {path: "display.x_axis.ticks", defaults: {...defaultDefaults}},
         {path: "display.x_axis.tick_numbers", defaults: {...defaultDefaults}},
@@ -68,16 +68,13 @@ export default class {
             .delay(data.rotation.delay)
             .attr("transform", `rotate(${data.rotation.value})`);
 
-
-        console.log("x_axis", element)
-
         // axis
-        x_axis(element.select("#x_axis"), data.display.x_axis, data.display.x_axis.scaling.value, metadata.width)
-        // y_axis(element.select("#y_axis"), data.display.y_axis, data.scaling, metadata.height)
-        //
-        // // centerpoint and levelsets
-        // if (data.value.centerpoint) centerpoint(d3.select('#levelsets'))
-        // if (data.value.levelsets) levelsets(d3.select('#levelsets'), {matrix: data.algorithm.Q,}, data.viewbox.scaling)
+        x_axis(element.select("#x_axis"), data.display.x_axis, data.scaling.value, metadata.width)
+        y_axis(element.select("#y_axis"), data.display.y_axis, data.scaling.value, metadata.height)
+
+        // centerpoint and levelsets
+        if (data.display.centerpoint.value) centerpoint(element.select('#levelsets'))
+        if (data.display.levelsets.value) levelsets(element.select('#levelsets'), {matrix: data.hessian,}, data.scaling.value)
     }
 }
 
@@ -177,7 +174,7 @@ function y_axis(element, data, scaling, height) {
 
 }
 
-function centerpoint(element, data) {
+function centerpoint(element) {
     element
         .selectAll("#centerpoint")
         .data([true])
@@ -192,6 +189,25 @@ function centerpoint(element, data) {
             update => update.transition().attr("r", 1)
         )
 }
+
+function single_level(element, level, scaling) {
+    // one level
+    element
+        .selectAll('#one_level')
+        .data([level])
+        .join(
+            enter => enter.append('circle')
+                .attr("id", "one_level")
+                .attr('stroke', 'white')
+                .attr('stroke-width', 2)
+                .attr('fill', 'none')
+                .attr('r', d => d * scaling * 200),
+            update => update.transition().duration(1000)
+                .attr('r', d => d * scaling * 200)
+        )
+
+}
+
 
 function levelsets(element, data, scaling) {
 

@@ -10,6 +10,8 @@ export default class {
         rotation_bias: false,
     }
 
+    modules = []
+
     _start_state = {
         viewbox: {
             x: 0,

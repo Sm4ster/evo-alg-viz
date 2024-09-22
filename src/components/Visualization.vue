@@ -121,7 +121,7 @@ export default {
   components: {RadioSelect, Toggle, ParameterButton, Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot},
   data() {
     return {
-      sequence_id: 0,
+      sequence_id: 2,
 
       steps: [],
       start_state: "manual",

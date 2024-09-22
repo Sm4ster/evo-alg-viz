@@ -28,9 +28,6 @@ export default class OnePlusOneES extends parentAnimation {
             zoom: 1,
             x: 0,
             y: 0,
-            graph_rotation: 0,
-            algorithm_rotation: 0,
-            scaling: 1,
         },
 
         equations: [

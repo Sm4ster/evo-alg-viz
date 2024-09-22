@@ -1,17 +1,24 @@
+import {defaultDefaults} from "../../components/defaults.js";
+import * as math from "mathjs";
+import * as d3 from 'd3'
+
 export default class {
-    id = "EvolutionStrategies"
+    name = "EvolutionStrategies"
 
     options = {
+        rotation: 0,
+        scaling: 1,
         display: {
             m_dot: true,
+            m_line: true,
             ellipse: true,
             density: true,
-            one_level: true
+            population: true
         },
 
         algorithm: {
             // data
-            m: [0, 0],
+            m: [1, 1],
             C: [[1, 0], [0, 1]],
             sigma: 1,
             population: [],
@@ -19,11 +26,11 @@ export default class {
     }
 
     defaults = [
+        {path: "scaling", defaults: defaultDefaults},
         {path: "display.m_line", defaults: defaultDefaults},
         {path: "display.m_dot", defaults: {...defaultDefaults, transition: "linear", rotation_bias: 0}},
         {path: "display.ellipse", defaults: {...defaultDefaults, transition: "linear", rotation_bias: 0}},
         {path: "display.density", defaults: {...defaultDefaults, transition: "linear", rotation_bias: 0}},
-        {path: "display.one_level", defaults: {...defaultDefaults}},
     ]
 
     init(svg) {
@@ -34,70 +41,67 @@ export default class {
     }
 
     update(element, data, metadata) {
-        // rotation of the algorithm
-        element.select("#algorithm")
-            .transition()
-            .duration(data.viewbox.algorithm_rotation.duration)
-            .delay(data.viewbox.algorithm_rotation.delay)
-            .attr("transform", `rotate(${data.viewbox.algorithm_rotation.value})`);
+        let base_element = element
 
-        // one level
-        single_level(d3.select("levelsets"), 1, data.scaling)
+        // rotation of the algorithm
+        base_element.transition()
+            .duration(data.rotation.duration)
+            .delay(data.rotation.delay)
+            .attr("transform", `rotate(${data.rotation.value})`);
+
 
         // algorithm state
-        if (data.canvas.density.value) {
-            gaussian_density(
-                data.algorithm.m,
-                data.algorithm.sigma,
-                data.algorithm.C
-            );
-        }
+        //if (data.display.density.value) {
+        //    gaussian_density(
+        //        data.algorithm.m,
+        //       data.algorithm.sigma,
+        //        data.algorithm.C
+        //    );
+        //}
 
-
-        if (data.m_line) {
+        if (data.display.m_line.value) {
             line(
-                'm_line',
+                base_element,
                 {
                     x: [0, data.algorithm.m[0]],
                     y: [0, data.algorithm.m[1]],
                     color: '#ea580c',
                     width: 2
                 },
-                d3.select('#alg_state'),
-                data.scaling
+                'm_line',
+                data.scaling.value
             ) // Connection line between 0,0 and the distribution center
         }
 
 
         circle(
-            d3.select('#algorithm'),
-            data.canvas.m_dot.value ? {
-                duration: data.canvas.m_dot.duration,
-                delay: data.canvas.m_dot.delay,
-                transition: data.canvas.m_dot.transition,
+            base_element,
+            data.display.m_dot.value ? {
+                duration: data.display.m_dot.duration,
+                delay: data.display.m_dot.delay,
+                transition: data.display.m_dot.transition,
                 coords: data.algorithm.m,
                 r: 2,
                 color: '#ea580c'
             } : {},
             'm_dot',
-            data.viewbox.scaling
+            data.scaling.value
         )
 
 
         ellipse(
-            d3.select('#algorithm'),
-            data.canvas.ellipse.value ?
+            base_element,
+            data.display.ellipse.value ?
                 {
-                    duration: data.canvas.ellipse.duration,
-                    rotation_bias: data.canvas.ellipse.rotation_bias,
-                    transition: data.canvas.ellipse.transition,
+                    duration: data.display.ellipse.duration,
+                    rotation_bias: data.display.ellipse.rotation_bias,
+                    transition: data.display.ellipse.transition,
                     center: data.algorithm.m,
                     matrix: math.multiply(data.algorithm.sigma, data.algorithm.C)
                 } : {},
             'std_dev',
-            data.viewbox.scaling
+            data.scaling.value
         )
-
 
         if (data.algorithm.population) {
             circle(
@@ -112,10 +116,9 @@ export default class {
                     }
                 }),
                 'population',
-                data.viewbox.scaling
+                data.scaling.value
             )
         }
-
     }
 
     set_random_start() {
@@ -136,169 +139,17 @@ export default class {
     }
 }
 
-function x_axis(element, data, scaling, width) {
-    element
-        .selectAll('line#line')
-        .data(data.line.value ? [true] : [])
-        .join(
-            enter => enter.append('line')
-                .attr('id', 'line')
-                .attr('x1', -width * 2)
-                .attr('x2', width * 2)
-                .attr('stroke', 'rgb(211,211,211)')
-                .attr('stroke-width', 2)
-                .attr("opacity", 0)
-                .transition().duration(data.line.duration).delay(data.line.delay)
-                .attr("opacity", 1),
-            update => update,
-            exit => exit
-                .transition().duration(data.line.duration).delay(data.line.delay)
-                .attr("opacity", 0).remove());
-
-    element.selectAll('.x_axis_tick')
-        .data(data.ticks.value ? _.range(-100, 100) : [])
-        .join(
-            enter => enter
-                .append('line')
-                .attr("class", "x_axis_tick")
-                .attr('x1', d => d * scaling * 200)
-                .attr('x2', d => d * scaling * 200)
-                .attr('y1', 10)
-                .attr('y2', -10)
-                .attr('stroke', 'gray')
-                .attr('stroke-width', 1)
-                .attr("opacity", 0)
-                .transition().duration(data.ticks.duration).delay(data.ticks.delay)
-                .attr("opacity", 1),
-            update => update
-                .transition().duration(data.ticks.duration).delay(data.ticks.delay)
-                .attr('x1', d => d * scaling * 200)
-                .attr('x2', d => d * scaling * 200)
-                .attr('y1', 10)
-                .attr('y2', -10),
-            exit => exit
-                .transition().duration(data.line.duration).delay(data.line.delay)
-                .attr("opacity", 0).remove()
-        )
-}
 
 
-function y_axis(element, data, scaling, height) {
-    element
-        .selectAll('line#line')
-        .data(data.line.value ? [true] : [])
-        .join(
-            enter => enter.append('line')
-                .attr("id", "line")
-                .attr('y1', -height * 10)
-                .attr('y2', height * 10)
-                .attr('stroke', 'rgb(211,211,211)')
-                .attr('stroke-width', 2)
-                .attr("opacity", 0)
-                .transition().duration(data.line.duration).delay(data.line.delay)
-                .attr("opacity", 1),
-            update => update,
-            exit => exit
-                .transition().duration(data.line.duration).delay(data.line.delay)
-                .attr("opacity", 0).remove());
 
-
-    element.selectAll('.y_axis_tick')
-        .data(data.ticks.value ? _.range(-100, 100) : [])
-        .join(
-            enter => enter
-                .append('line')
-                .attr("class", "y_axis_tick")
-                .attr('y1', d => d * scaling * 200)
-                .attr('y2', d => d * scaling * 200)
-                .attr('x1', 10)
-                .attr('x2', -10)
-                .attr('stroke', 'gray')
-                .attr('stroke-width', 1)
-                .attr('fill', 'none').attr("opacity", 0)
-                .transition().duration(data.ticks.duration).delay(data.ticks.delay)
-                .attr("opacity", 1),
-            update => update
-                .transition().duration(data.ticks.duration).delay(data.ticks.delay)
-                .attr('y1', d => d * scaling * 200)
-                .attr('y2', d => d * scaling * 200)
-                .attr('x1', 10)
-                .attr('x2', -10),
-            exit => exit
-                .transition().duration(data.ticks.duration).delay(data.ticks.delay)
-                .attr("opacity", 0).remove()
-        )
-
-
-}
-
-function centerpoint(element, data) {
-    element
-        .selectAll("#centerpoint")
-        .data([true])
-        .join(
-            enter => enter.append("circle")
-                .attr("id", "centerpoint")
-                .attr("cx", 0)
-                .attr("cy", 0)
-                .attr("r", 1)
-                .attr("stroke", "white")
-                .attr("stroke-width", 2),
-            update => update.transition().attr("r", 1)
-        )
-}
-
-function levelsets(element, data, scaling) {
-
-    let eigen = math.eigs(data.matrix).eigenvectors;
-    let angle = Math.atan2(eigen[0].vector[1], eigen[0].vector[0]) * (180 / Math.PI)
-
-    element.selectAll('.levelset')
-        .data(_.range(100))
-        .join(
-            enter => enter
-                .append('ellipse')
-                .attr("class", "levelset")
-                .attr('rx', d => d * scaling * Math.sqrt(eigen[0].value) * 50)
-                .attr('ry', d => d * scaling * Math.sqrt(eigen[1].value) * 50)
-                .attr("transform", d => `rotate(${angle})`)
-                .attr('stroke', 'gray')
-                .attr('stroke-width', 1.5)
-                .attr('fill', 'none'),
-            update => update.transition().duration(d => d.duration)
-                .attr('rx', d => d * scaling * Math.sqrt(eigen[0].value) * 50)
-                .attr('ry', d => d * scaling * Math.sqrt(eigen[1].value) * 50)
-                .attr("transform", d => `rotate(${angle})`)
-        )
-}
-
-
-function single_level(element, level, scaling) {
-    // one level
-    element
-        .selectAll('#one_level')
-        .data([level])
-        .join(
-            enter => enter.append('circle')
-                .attr("id", "one_level")
-                .attr('stroke', 'black')
-                .attr('stroke-width', 2)
-                .attr('fill', 'none')
-                .attr('r', d => d * scaling * 200),
-            update => update.transition().duration(1000)
-                .attr('r', d => d * scaling * 200)
-        )
-
-}
-
-
-function line(tag, data, element, scaling) {
+function line(element, data, tag, scaling) {
     let tag_type = "class"
     if (!Array.isArray(data)) {
         tag_type = "id";
         data = [data]
     }
 
+    console.log(data)
 
     element.selectAll((tag_type === "id" ? "#" : ".") + tag)
         .data(data)
@@ -307,10 +158,10 @@ function line(tag, data, element, scaling) {
                 .attr(tag_type, tag)
                 .attr('x1', d => d.x[0] * scaling * 200)
                 .attr('x2', d => d.x[1] * scaling * 200)
-                .attr('y1', d => d.y[0] * scaling * 200)
-                .attr('y2', d => d.y[1] * scaling * 200)
+                .attr('y1', d => -d.y[0] * scaling * 200)
+                .attr('y2', d => -d.y[1] * scaling * 200)
                 .attr('stroke', d => d.color)
-                .attr('stroke-width', d.width)
+                .attr('stroke-width', d => d.width)
             ,
             update => update
                 .transition().duration(data.duration)
