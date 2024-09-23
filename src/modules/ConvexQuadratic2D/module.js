@@ -2,6 +2,7 @@ import {defaultDefaults} from "../../components/defaults.js";
 import * as _ from "lodash";
 import * as math from "mathjs";
 
+
 export default class {
     name = "ConvexQuadratic"
 
@@ -22,9 +23,14 @@ export default class {
             },
             centerpoint: true,
             levelsets: true,
+            one_level: false,
         },
+        hessian: [[1, 0], [0, 1]], // fitness function params
 
-        hessian: [[1, 0], [0, 1]] // fitness function params
+        // fitness function
+        fitness(x) {
+            return math.multiply(math.multiply(math.transpose(x),  this.hessian), x);
+        }
     }
 
     defaults = [
@@ -41,12 +47,6 @@ export default class {
         {path: "display.y_axis.tick_numbers", defaults: {...defaultDefaults}}
     ]
 
-    fitness(x, Q = false) {
-        if (Q === false) {
-            Q = _.merge({}, this._start_state, this.start_state).algorithm.Q
-        }
-        return math.multiply(math.multiply(math.transpose(x), Q), x);
-    }
 
     init(svg) {
         // Graph background
@@ -58,9 +58,11 @@ export default class {
 
     update(element, data, metadata) {
         // get element
-        console.log("module data:", data)
+
 
         let graph = element.select("#graph")
+
+
 
         // rotation of the graph
         graph.transition()
@@ -74,7 +76,7 @@ export default class {
 
         // centerpoint and levelsets
         if (data.display.centerpoint.value) centerpoint(element.select('#levelsets'))
-        if (data.display.levelsets.value) levelsets(element.select('#levelsets'), {matrix: data.hessian,}, data.scaling.value)
+        if (data.display.levelsets.value) levelsets(element.select('#levelsets'), {matrix: data.hessian}, data.scaling.value)
     }
 }
 

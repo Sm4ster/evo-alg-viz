@@ -154,6 +154,7 @@ export function equations(element, data) {
                 update.select("g.position_y").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `translate(0 ${d.y.value})`);
                 update.select("g.scaling").transition().duration(d => d.duration).delay(d => d.delay).attr("transform", d => `scale(${d.scaling.value})`);
                 update.select("g.rotation").transition().duration(d => d.rotation.duration).delay(d => d.rotation.delay).attr("transform", d => `rotate(${d.rotation.value})`);
+                update.select("foreignObject").attr("class",d => `overflow-visible whitespace-nowrap ${d.class}`)
 
                 if (data.transition === "interpolate") {
                     const interpolateNumber = NumberInterpolator("f(5.1)", "f(10)");

@@ -14,8 +14,8 @@ window.numeric = numeric;
 export default class OnePlusOneES extends parentAnimation {
 
     modules = [
-        new ConvexQuadratic2D,
-        // new EvolutionStrategies
+        {landscape: new ConvexQuadratic2D},
+        {algorithm: new EvolutionStrategies}
     ]
 
 
@@ -35,62 +35,61 @@ export default class OnePlusOneES extends parentAnimation {
                 innerClass: "bg-black",
                 class: "text-indigo-700",
                 scaling: 1,
-                x: 300,
-                y: -350,
+                x: 500,
+                y: -550,
                 value: "0. \\ \\textbf{for} \\ t=1,2,..., \\textit{until satisfied} \\ \\textbf{do}"
             },
             {
                 innerClass: "bg-black",
-                class: "text-indigo-700",
-                x: 300,
-                y: -320,
+                x: 500,
+                y: -520,
                 scaling: 1,
                 value: "1. \\quad x_t \\sim m_t + \\sigma_t \\cdot \\mathcal{N}(0, I)"
             },
             {
                 innerClass: "bg-black",
-                x: 300,
-                y: -290,
+                x: 500,
+                y: -490,
                 scaling: 1,
                 class: "",
                 value: "2. \\quad \\textbf{if} \\ f(x_t) \\leq f(m_t) \\ \\textbf{then}"
             },
             {
                 innerClass: "bg-black",
-                x: 300,
-                y: -260,
+                x: 500,
+                y: -460,
                 scaling: 1,
                 class: "",
                 value: "3. \\qquad m_{t+1} \\leftarrow x_t"
             },
             {
                 innerClass: "bg-black",
-                x: 300,
-                y: -230,
+                x: 500,
+                y: -430,
                 scaling: 1,
                 class: "",
                 value: "4. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha"
             },
             {
                 innerClass: "",
-                x: 300,
-                y: -200,
+                x: 500,
+                y: -400,
                 scaling: 1,
                 class: "",
                 value: "5. \\quad \\textbf{else}"
             },
             {
                 innerClass: "",
-                x: 300,
-                y: -170,
+                x: 500,
+                y: -370,
                 scaling: 1,
                 class: "",
                 value: "6. \\qquad m_{t+1} \\leftarrow m_t"
             },
             {
                 innerClass: "",
-                x: 300,
-                y: -140,
+                x: 500,
+                y: -340,
                 scaling: 1,
                 class: "",
                 value: "7. \\qquad \\sigma_{t+1} \\leftarrow \\sigma_t \\cdot \\alpha^{-1/4}"
@@ -99,45 +98,29 @@ export default class OnePlusOneES extends parentAnimation {
     }
 
     steps = [
-        ({viewbox, equations, ConvexQuadratic, EvolutionStrategies}) => {
+        ({algorithm, equations}) => {
+            let distribution = MultivariateNormal(algorithm.state.m, math.multiply(algorithm.state.sigma, algorithm.state.C));
 
-            equations[0].rotation = {value: 45, delay: 4000, duration: 200}
+            algorithm.state.m = [2,2]
 
-            viewbox.x = {
-                delay: 0,
-                duration: 3000,
-                value: 250
-            }
-            viewbox.y = {
-                delay: 1500,
-                duration: 1500,
-                value: 125
-            }
-            viewbox.zoom = {
-                delay: 2000,
-                duration: 2000,
-                value: 2
-            }
+            algorithm.state.population = [{r: 5, color: "gray", coords: distribution.sample()}]
+            equations[0].class = ""
+            equations[1].class = "text-indigo-700"
+            equations[2].class = "text-indigo-700"
         },
-        // ({algorithm, equations}) => {
-        //     let distribution = MultivariateNormal(algorithm.m, math.multiply(algorithm.sigma, algorithm.C));
-        //
-        //     algorithm.population = [{r: 5, color: "gray", coords: distribution.sample()}]
-        //     equations[1].class = "text-indigo-700"
-        // },
-        // ({algorithm}) => {
-        //     algorithm.population = [{
+        // ({algorithm, landscape}) => {
+        //     algorithm.state.population = [{
         //         delay: 0,
         //         r: 5,
-        //         color: this.fitness(algorithm.population[0].coords) > this.fitness(algorithm.m) ? "red" : "green",
-        //         coords: algorithm.population[0].coords
+        //         color: landscape.fitness(algorithm.state.population[0].coords) > landscape.fitness(algorithm.state.m) ? "red" : "green",
+        //         coords: algorithm.state.population[0].coords
         //     }]
         //
         // },
-        // ({algorithm}) => {
-        //     if (this.fitness(algorithm.population[0].coords) <= this.fitness(algorithm.m)) {
-        //         algorithm.m = algorithm.population[0].coords;
-        //         algorithm.population[0].r = 0;
+        // ({algorithm, landscape}) => {
+        //     if (landscape.fitness(algorithm.state.population[0].coords) <= landscape.fitness(algorithm.state.m)) {
+        //         algorithm.state.m = algorithm.state.population[0].coords;
+        //         algorithm.state.population[0].r = 0;
         //     } else {
         //         {
         //             highlight_row: 6
@@ -145,12 +128,12 @@ export default class OnePlusOneES extends parentAnimation {
         //     }
         //
         // },
-        // ({algorithm}) => {
+        // ({algorithm, landscape}) => {
         //     let alpha = 3 / 2;
-        //     if (this.fitness(algorithm.population[0].coords) <= this.fitness(algorithm.m)) {
-        //         algorithm.sigma = algorithm.sigma * alpha
+        //     if (landscape.fitness(algorithm.state.population[0].coords) <= landscape.fitness(algorithm.state.m)) {
+        //         algorithm.state.sigma = algorithm.state.sigma * alpha
         //     } else {
-        //         algorithm.sigma = algorithm.sigma * (1 / Math.pow(alpha, 1 / 4))
+        //         algorithm.state.sigma = algorithm.state.sigma * (1 / Math.pow(alpha, 1 / 4))
         //         {
         //             highlight_row: 4
         //         }

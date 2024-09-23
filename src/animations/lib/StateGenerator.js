@@ -1,6 +1,7 @@
 import * as math from "mathjs";
 import * as _ from 'lodash'
 import {defaultValues} from "../../components/defaults.js";
+import {exp} from "mathjs";
 
 export default class {
     base_defaults = {
@@ -11,6 +12,7 @@ export default class {
     }
 
     modules = []
+    _modules = []
 
     _start_state = {
         viewbox: {
@@ -25,6 +27,17 @@ export default class {
     start_state = {}
     steps = []
 
+    init() {
+        for (let module of this.modules) {
+            let module_alias;
+            if (_.isPlainObject(module)) {
+                module_alias = Object.keys(module)[0]
+                module = module[Object.keys(module)[0]]
+            } else module_alias = module.name
+
+            this._modules.push({alias: module_alias, module: module})
+        }
+    }
 
     set_start(state) {
         this.start_state.algorithm = {...this._start_state.algorithm, ...this.start_state.algorithm, ...state}
@@ -37,20 +50,17 @@ export default class {
 
         // add default values to create a complete cur_state
         let cur_state = _.merge({}, this._start_state, this.start_state)
-        for (let module of this.modules) {
-            cur_state[module.name] = _.merge(module.options, cur_state[module.name])
+        for (const {module, alias} of this._modules) {
+            cur_state[alias] = _.merge(module.options, cur_state[alias])
         }
-
 
         let exp_state = applyDefaultValues(_.cloneDeep(cur_state), this.base_defaults, defaultValues)
 
-        for (let module of this.modules) {
-            exp_state[module.name] =
-                applyDefaultValues(_.merge(module.options, cur_state[module.name]), this.base_defaults, module.defaults)
+        for (const {module, alias} of this._modules) {
+            exp_state[alias] = applyDefaultValues(_.merge(module.options, cur_state[alias]), this.base_defaults, module.defaults)
         }
 
-        step_cache.push(exp_state)
-
+        step_cache.push(_.cloneDeep(exp_state))
 
         for (let cur_step = 0; cur_step < this.steps.length; cur_step++) {
             // update the cur_state
@@ -59,12 +69,12 @@ export default class {
             // expand everything with its defaults
             exp_state = applyDefaultValues(_.cloneDeep(cur_state), this.base_defaults, defaultValues)
 
-            for (let module of this.modules) {
-                exp_state[module.name] =
-                    applyDefaultValues(cur_state[module.name], this.base_defaults, module.defaults)
+            for (const {module, alias} of this._modules) {
+                exp_state[alias] =
+                    applyDefaultValues(cur_state[alias], this.base_defaults, module.defaults)
             }
 
-            step_cache.push(exp_state)
+            step_cache.push(_.cloneDeep(exp_state))
         }
 
         return step_cache

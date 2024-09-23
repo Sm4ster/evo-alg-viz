@@ -1,4 +1,5 @@
 import {defaultDefaults} from "../../components/defaults.js";
+import {parseTransform} from "../../components/GraphicUtils.js";
 import * as math from "mathjs";
 import * as d3 from 'd3'
 
@@ -16,7 +17,7 @@ export default class {
             population: true
         },
 
-        algorithm: {
+        state: {
             // data
             m: [1, 1],
             C: [[1, 0], [0, 1]],
@@ -27,7 +28,7 @@ export default class {
 
     defaults = [
         {path: "scaling", defaults: defaultDefaults},
-        {path: "display.m_line", defaults: defaultDefaults},
+        {path: "display.m_line", defaults: {...defaultDefaults, transition: "linear", rotation_bias: 0}},
         {path: "display.m_dot", defaults: {...defaultDefaults, transition: "linear", rotation_bias: 0}},
         {path: "display.ellipse", defaults: {...defaultDefaults, transition: "linear", rotation_bias: 0}},
         {path: "display.density", defaults: {...defaultDefaults, transition: "linear", rotation_bias: 0}},
@@ -53,18 +54,22 @@ export default class {
         // algorithm state
         //if (data.display.density.value) {
         //    gaussian_density(
-        //        data.algorithm.m,
-        //       data.algorithm.sigma,
-        //        data.algorithm.C
+        //        data.state.m,
+        //       data.state.sigma,
+        //        data.state.C
         //    );
         //}
 
         if (data.display.m_line.value) {
+            console.log("datastate:", data.display)
             line(
                 base_element,
                 {
-                    x: [0, data.algorithm.m[0]],
-                    y: [0, data.algorithm.m[1]],
+                    duration: data.display.m_line.duration,
+                    delay: data.display.m_line.delay,
+                    transition: data.display.m_line.transition,
+                    x: [0, data.state.m[0]],
+                    y: [0, data.state.m[1]],
                     color: '#ea580c',
                     width: 2
                 },
@@ -74,51 +79,51 @@ export default class {
         }
 
 
-        circle(
-            base_element,
-            data.display.m_dot.value ? {
-                duration: data.display.m_dot.duration,
-                delay: data.display.m_dot.delay,
-                transition: data.display.m_dot.transition,
-                coords: data.algorithm.m,
-                r: 2,
-                color: '#ea580c'
-            } : {},
-            'm_dot',
-            data.scaling.value
-        )
-
-
-        ellipse(
-            base_element,
-            data.display.ellipse.value ?
-                {
-                    duration: data.display.ellipse.duration,
-                    rotation_bias: data.display.ellipse.rotation_bias,
-                    transition: data.display.ellipse.transition,
-                    center: data.algorithm.m,
-                    matrix: math.multiply(data.algorithm.sigma, data.algorithm.C)
-                } : {},
-            'std_dev',
-            data.scaling.value
-        )
-
-        if (data.algorithm.population) {
-            circle(
-                d3.select('#population'),
-
-                data.algorithm.population.map(d => {
-                    return {
-                        duration: data.duration,
-                        transition: data.transition,
-                        scaling: data.scaling,
-                        ...d
-                    }
-                }),
-                'population',
-                data.scaling.value
-            )
-        }
+        // circle(
+        //     base_element,
+        //     data.display.m_dot.value ? {
+        //         duration: data.display.m_dot.duration,
+        //         delay: data.display.m_dot.delay,
+        //         transition: data.display.m_dot.transition,
+        //         coords: data.state.m,
+        //         r: 2,
+        //         color: '#ea580c'
+        //     } : {},
+        //     'm_dot',
+        //     data.scaling.value
+        // )
+        //
+        //
+        // ellipse(
+        //     base_element,
+        //     data.display.ellipse.value ?
+        //         {
+        //             duration: data.display.ellipse.duration,
+        //             rotation_bias: data.display.ellipse.rotation_bias,
+        //             transition: data.display.ellipse.transition,
+        //             center: data.state.m,
+        //             matrix: math.multiply(data.state.sigma, data.state.C)
+        //         } : {},
+        //     'std_dev',
+        //     data.scaling.value
+        // )
+        //
+        // if (data.state.population) {
+        //     circle(
+        //         d3.select('#population'),
+        //
+        //         data.state.population.map(d => {
+        //             return {
+        //                 duration: data.duration,
+        //                 transition: data.transition,
+        //                 scaling: data.scaling,
+        //                 ...d
+        //             }
+        //         }),
+        //         'population',
+        //         data.scaling.value
+        //     )
+        // }
     }
 
     set_random_start() {
@@ -149,7 +154,7 @@ function line(element, data, tag, scaling) {
         data = [data]
     }
 
-    console.log(data)
+    console.log("line_data", data)
 
     element.selectAll((tag_type === "id" ? "#" : ".") + tag)
         .data(data)
@@ -164,8 +169,9 @@ function line(element, data, tag, scaling) {
                 .attr('stroke-width', d => d.width)
             ,
             update => update
-                .transition().duration(data.duration)
+                .transition().duration(d => d.duration).delay(d => d.delay)
                 .attrTween('x1', (d, e, f) => {
+                    console.log("update of the line", d.transition)
                     if (d.transition === 'rotation' || d.transition === '-rotation') {
                         let {startAngle, endAngle, radius} = get_angles(
                             +f[e].getAttribute('x1'), +f[e].getAttribute('y1'),
@@ -177,7 +183,8 @@ function line(element, data, tag, scaling) {
                             return radius * Math.cos(angle);
                         };
                     } else {
-                        const i = d3.interpolateNumber(+f[e].getAttribute('x1'), d.x[1] * scaling * 200);
+                        console.log("update of the line", d.transition)
+                        const i = d3.interpolateNumber(+f[e].getAttribute('x1'), d.x[0] * scaling * 200);
                         return function (t) {
                             return i(t);
                         };
@@ -213,7 +220,7 @@ function line(element, data, tag, scaling) {
                             return radius * Math.sin(angle);
                         };
                     } else {
-                        const i = d3.interpolateNumber(+f[e].getAttribute('y1'), -d.y[1] * scaling * 200);
+                        const i = d3.interpolateNumber(+f[e].getAttribute('y1'), -d.y[0] * scaling * 200);
                         return function (t) {
                             return i(t);
                         };

@@ -34,8 +34,8 @@
                 <div class="flex flex-col space-y-6 border border-indigo-600 rounded p-5 bg-white">
                   <div class="">
                     <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">examples</h3>
-                    <RadioSelect :options="algorithms" :selected_id="state_generator_id"
-                                 @update="state_generator_id = $event"></RadioSelect>
+                    <RadioSelect :options="algorithms" :selected_id="animation_id"
+                                 @update="animation_id = $event"></RadioSelect>
 
                   </div>
                   <div class="flex flex-col justify-between">
@@ -95,6 +95,7 @@ import {ref} from 'vue'
 import OnePlusOneES from "../animations/algorithms/1+1-ES.js";
 import OnePlusOneCMAES from "../animations/algorithms/1+1-CMA-ES.js";
 import NormalForm from "../animations/misc/NormalForm.js";
+import NormalFormTransformation from "../animations/misc/NormalFormTransformation.js";
 import NormalDistribution from "../animations/misc/NormalDistribution.js";
 import Scene1 from "../animations/IntroductionToES/Scene1.js";
 import Test from "../animations/Test.js"
@@ -110,9 +111,10 @@ const algorithms = [
   {id: 0, name: "1+1-ES", class: new OnePlusOneES()},
   {id: 1, name: "1+1-CMA-ES", class: new OnePlusOneCMAES()},
   {id: 2, name: "CMA-ES Normalform", class: new NormalForm()},
-  {id: 3, name: "Normal Distribution", class: new NormalDistribution()},
-  {id: 4, name: "Scene 1", class: new Scene1()},
-  {id: 5, name: "Test", class: new Test()},
+  {id: 3, name: "CMA-ES Normalform Transformation", class: new NormalFormTransformation()},
+  {id: 4, name: "Normal Distribution", class: new NormalDistribution()},
+  {id: 5, name: "Scene 1", class: new Scene1()},
+  {id: 6, name: "Test", class: new Test()},
 ]
 
 
@@ -121,10 +123,9 @@ export default {
   components: {RadioSelect, Toggle, ParameterButton, Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot},
   data() {
     return {
-      sequence_id: 2,
+      animation_id: 0,
 
       steps: [],
-      start_state: "manual",
       current_step: 0,
 
       dragging: false,
@@ -146,15 +147,14 @@ export default {
     }
   },
   watch: {
-    sequence_id() {
-      this.start_state = this.sequence.app_defaults.start_state;
+    animation_id() {
       this.update({...this.steps[this.current_step], duration: 0});
 
     },
     current_step: function (step, old_step) {
       if (step === 0) {
         // this.update_flag = false;
-        // for(let module of this.sequence.modules){
+        // for(let module of this.animation.modules){
         //   module.loop()
         // }
         // this.update_flag = true;
@@ -187,10 +187,8 @@ export default {
     this.y = ref(0);
     this.zoom = ref(1);
 
-    this.steps = this.sequence.fill_step_cache()
-
-    // this.start_state = this.sequence.app_defaults.start_state;
-    // this.steps = this.sequence.set_start({
+    // this.start_state = this.animation.app_defaults.start_state;
+    // this.steps = this.animation.set_start({
     //   m: [...this.params.m],
     //   C: [[this.params.A, this.params.B], [this.params.B, this.params.C]],
     //   sigma: this.params.sigma,
@@ -212,7 +210,7 @@ export default {
     svg.addEventListener('mouseup', this.stopDrag);
     svg.addEventListener('mousemove', this.drag);
 
-    this.init_sequence();
+    this.init_animation();
     this.update(this.steps[this.current_step]);
   },
   beforeUnmounted() {
@@ -224,8 +222,8 @@ export default {
     svg.removeEventListener('mousemove', this.drag);
   },
   computed: {
-    sequence() {
-      return algorithms[this.sequence_id].class
+    animation() {
+      return algorithms[this.animation_id].class
     },
     algorithms() {
       return algorithms
@@ -256,21 +254,22 @@ export default {
       equations(d3.select("#equations"), data.equations)
 
       // let modules update the canvas
-      for (let module of this.sequence.modules) {
-        console.log(module)
-        module.update(d3.select(`#modules #${module.name}`), data[module.name], {
+      for (const {module, alias} of this.animation._modules) {
+        module.update(d3.select(`#modules #${alias}`), data[alias], {
           width: this.width,
           height: this.height
         })
       }
 
     },
-    init_sequence(){
-      console.log("asdas", d3.select("#modules"))
-      for(let module of this.sequence.modules) {
-        module.init(d3.select("#modules").append("g").attr("id", module.name))
+    init_animation(){
+      this.animation.init()
+
+      for(let module of this.animation._modules) {
+        module.module.init(d3.select("#modules").append("g").attr("id", module.alias))
       }
 
+      this.steps = this.animation.fill_step_cache()
     },
 
     drag(e) {
