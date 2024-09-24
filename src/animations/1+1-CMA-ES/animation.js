@@ -1,9 +1,7 @@
 import * as math from "mathjs";
-import {decimals} from "../lib/functions.js";
-import parentAnimation from "../lib/StateGenerator.js";
+import parentAnimation from "../parentAnimation.js";
 import numeric from 'numeric';
 import MultivariateNormal from "multivariate-normal";
-import _ from "lodash";
 
 // this is necessary for MultivariateNormal to work, do not change!!
 window.numeric = numeric;

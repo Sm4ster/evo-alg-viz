@@ -1,12 +1,19 @@
 import {defaultDefaults} from "../../components/defaults.js";
 import * as _ from "lodash";
 import * as math from "mathjs";
+import options from "./options.vue"
 
 
 export default class {
     name = "ConvexQuadratic"
-
     options = {
+        component: options,
+        handler(data){
+            console.log(data)
+        }
+    }
+
+    start_state = {
         rotation: 0,
         scaling: 1,
 

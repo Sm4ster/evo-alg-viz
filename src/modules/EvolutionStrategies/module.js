@@ -2,11 +2,19 @@ import {defaultDefaults} from "../../components/defaults.js";
 import {parseTransform} from "../../components/GraphicUtils.js";
 import * as math from "mathjs";
 import * as d3 from 'd3'
+import options from "./options.vue";
 
 export default class {
     name = "EvolutionStrategies"
-
     options = {
+        component: options,
+        handler(data){
+            console.log(data)
+        }
+    }
+
+
+    start_state = {
         rotation: 0,
         scaling: 1,
         display: {
@@ -32,20 +40,22 @@ export default class {
         {path: "display.m_dot", defaults: {...defaultDefaults, transition: "linear", rotation_bias: 0}},
         {path: "display.ellipse", defaults: {...defaultDefaults, transition: "linear", rotation_bias: 0}},
         {path: "display.density", defaults: {...defaultDefaults, transition: "linear", rotation_bias: 0}},
+        {path: "state.population.*", defaults: {...defaultDefaults, transition: "linear", rotation_bias: 0}},
     ]
 
     init(svg) {
         // Algorithm state
-        const algorithm = svg.append("g").attr("id", "#algorithm").attr("transform", "rotate(0)")
-        algorithm.append("g").attr("id", "#density")
-        algorithm.append("g").attr("id", "#population")
+        const algorithm = svg.append("g").attr("id", "algorithm").attr("transform", "rotate(0)")
+        algorithm.append("g").attr("id", "density")
+        algorithm.append("g").attr("id", "population")
     }
 
+
     update(element, data, metadata) {
-        let base_element = element
+        let base_element = element.select("#algorithm")
 
         // rotation of the algorithm
-        base_element.transition()
+        element.transition()
             .duration(data.rotation.duration)
             .delay(data.rotation.delay)
             .attr("transform", `rotate(${data.rotation.value})`);
@@ -61,7 +71,6 @@ export default class {
         //}
 
         if (data.display.m_line.value) {
-            console.log("datastate:", data.display)
             line(
                 base_element,
                 {
@@ -79,51 +88,43 @@ export default class {
         }
 
 
-        // circle(
-        //     base_element,
-        //     data.display.m_dot.value ? {
-        //         duration: data.display.m_dot.duration,
-        //         delay: data.display.m_dot.delay,
-        //         transition: data.display.m_dot.transition,
-        //         coords: data.state.m,
-        //         r: 2,
-        //         color: '#ea580c'
-        //     } : {},
-        //     'm_dot',
-        //     data.scaling.value
-        // )
-        //
-        //
-        // ellipse(
-        //     base_element,
-        //     data.display.ellipse.value ?
-        //         {
-        //             duration: data.display.ellipse.duration,
-        //             rotation_bias: data.display.ellipse.rotation_bias,
-        //             transition: data.display.ellipse.transition,
-        //             center: data.state.m,
-        //             matrix: math.multiply(data.state.sigma, data.state.C)
-        //         } : {},
-        //     'std_dev',
-        //     data.scaling.value
-        // )
-        //
-        // if (data.state.population) {
-        //     circle(
-        //         d3.select('#population'),
-        //
-        //         data.state.population.map(d => {
-        //             return {
-        //                 duration: data.duration,
-        //                 transition: data.transition,
-        //                 scaling: data.scaling,
-        //                 ...d
-        //             }
-        //         }),
-        //         'population',
-        //         data.scaling.value
-        //     )
-        // }
+        circle(
+            base_element,
+            data.display.m_dot.value ? {
+                duration: data.display.m_dot.duration,
+                delay: data.display.m_dot.delay,
+                transition: data.display.m_dot.transition,
+                coords: data.state.m,
+                r: 2,
+                color: '#ea580c'
+            } : {},
+            'm_dot',
+            data.scaling.value
+        )
+
+
+        ellipse(
+            base_element,
+            data.display.ellipse.value ?
+                {
+                    duration: data.display.ellipse.duration,
+                    rotation_bias: data.display.ellipse.rotation_bias,
+                    transition: data.display.ellipse.transition,
+                    center: data.state.m,
+                    matrix: math.multiply(data.state.sigma, data.state.C)
+                } : {},
+            'std_dev',
+            data.scaling.value
+        )
+
+        if (data.state.population) {
+            circle(
+                d3.select('#population'),
+                data.state.population,
+                'population',
+                data.scaling.value
+            )
+        }
     }
 
     set_random_start() {
@@ -145,16 +146,12 @@ export default class {
 }
 
 
-
-
 function line(element, data, tag, scaling) {
     let tag_type = "class"
     if (!Array.isArray(data)) {
         tag_type = "id";
         data = [data]
     }
-
-    console.log("line_data", data)
 
     element.selectAll((tag_type === "id" ? "#" : ".") + tag)
         .data(data)
@@ -171,7 +168,6 @@ function line(element, data, tag, scaling) {
             update => update
                 .transition().duration(d => d.duration).delay(d => d.delay)
                 .attrTween('x1', (d, e, f) => {
-                    console.log("update of the line", d.transition)
                     if (d.transition === 'rotation' || d.transition === '-rotation') {
                         let {startAngle, endAngle, radius} = get_angles(
                             +f[e].getAttribute('x1'), +f[e].getAttribute('y1'),
@@ -183,7 +179,6 @@ function line(element, data, tag, scaling) {
                             return radius * Math.cos(angle);
                         };
                     } else {
-                        console.log("update of the line", d.transition)
                         const i = d3.interpolateNumber(+f[e].getAttribute('x1'), d.x[0] * scaling * 200);
                         return function (t) {
                             return i(t);
@@ -253,7 +248,6 @@ function circle(element, data, tag, scaling) {
         tag_type = "id";
         data = [data]
     }
-
 
     element.selectAll((tag_type === "id" ? "#" : ".") + tag)
         .data(data)

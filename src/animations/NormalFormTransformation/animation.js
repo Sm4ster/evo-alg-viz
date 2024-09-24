@@ -1,6 +1,5 @@
 import * as math from "mathjs";
-import {decimals} from "../lib/functions.js";
-import parentAnimation from "../lib/StateGenerator.js";
+import parentAnimation from "../parentAnimation.js";
 import ConvexQuadratic2D from "../../modules/ConvexQuadratic2D/module.js";
 import EvolutionStrategies from "../../modules/EvolutionStrategies/module.js"
 

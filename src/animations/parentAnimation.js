@@ -1,7 +1,5 @@
-import * as math from "mathjs";
 import * as _ from 'lodash'
-import {defaultValues} from "../../components/defaults.js";
-import {exp} from "mathjs";
+import {defaultValues} from "../components/defaults.js";
 
 export default class {
     base_defaults = {
@@ -51,13 +49,13 @@ export default class {
         // add default values to create a complete cur_state
         let cur_state = _.merge({}, this._start_state, this.start_state)
         for (const {module, alias} of this._modules) {
-            cur_state[alias] = _.merge(module.options, cur_state[alias])
+            cur_state[alias] = _.merge(module.start_state, cur_state[alias])
         }
 
         let exp_state = applyDefaultValues(_.cloneDeep(cur_state), this.base_defaults, defaultValues)
 
         for (const {module, alias} of this._modules) {
-            exp_state[alias] = applyDefaultValues(_.merge(module.options, cur_state[alias]), this.base_defaults, module.defaults)
+            exp_state[alias] = applyDefaultValues(_.merge(module.start_state, cur_state[alias]), this.base_defaults, module.defaults)
         }
 
         step_cache.push(_.cloneDeep(exp_state))

@@ -1,9 +1,7 @@
 import * as math from "mathjs";
-import {decimals} from "../lib/functions.js";
-import parentAnimation from "../lib/StateGenerator.js";
+import parentAnimation from "../parentAnimation.js";
 import numeric from 'numeric';
 import MultivariateNormal from "multivariate-normal";
-import _ from "lodash";
 import EvolutionStrategies from "../../modules/EvolutionStrategies/module.js"
 import ConvexQuadratic2D from "../../modules/ConvexQuadratic2D/module.js"
 
@@ -101,44 +99,40 @@ export default class OnePlusOneES extends parentAnimation {
         ({algorithm, equations}) => {
             let distribution = MultivariateNormal(algorithm.state.m, math.multiply(algorithm.state.sigma, algorithm.state.C));
 
-            algorithm.state.m = [2,2]
-
             algorithm.state.population = [{r: 5, color: "gray", coords: distribution.sample()}]
+
+            // move to the second equation
             equations[0].class = ""
             equations[1].class = "text-indigo-700"
-            equations[2].class = "text-indigo-700"
         },
-        // ({algorithm, landscape}) => {
-        //     algorithm.state.population = [{
-        //         delay: 0,
-        //         r: 5,
-        //         color: landscape.fitness(algorithm.state.population[0].coords) > landscape.fitness(algorithm.state.m) ? "red" : "green",
-        //         coords: algorithm.state.population[0].coords
-        //     }]
-        //
-        // },
-        // ({algorithm, landscape}) => {
-        //     if (landscape.fitness(algorithm.state.population[0].coords) <= landscape.fitness(algorithm.state.m)) {
-        //         algorithm.state.m = algorithm.state.population[0].coords;
-        //         algorithm.state.population[0].r = 0;
-        //     } else {
-        //         {
-        //             highlight_row: 6
-        //         }
-        //     }
-        //
-        // },
-        // ({algorithm, landscape}) => {
-        //     let alpha = 3 / 2;
-        //     if (landscape.fitness(algorithm.state.population[0].coords) <= landscape.fitness(algorithm.state.m)) {
-        //         algorithm.state.sigma = algorithm.state.sigma * alpha
-        //     } else {
-        //         algorithm.state.sigma = algorithm.state.sigma * (1 / Math.pow(alpha, 1 / 4))
-        //         {
-        //             highlight_row: 4
-        //         }
-        //     }
-        //
-        // },
+        ({algorithm, landscape}) => {
+            algorithm.state.population = [{
+                r: 5,
+                color: landscape.fitness(algorithm.state.population[0].coords) > landscape.fitness(algorithm.state.m) ? "red" : "green",
+                coords: algorithm.state.population[0].coords
+            }]
+
+        },
+        ({algorithm, landscape, equations}) => {
+            if (landscape.fitness(algorithm.state.population[0].coords) <= landscape.fitness(algorithm.state.m)) {
+                algorithm.state.m = algorithm.state.population[0].coords;
+                algorithm.state.population[0].r = 0;
+            } else {
+                equations[6].class = "text-indigo-700"
+            }
+
+        },
+        ({algorithm, landscape}) => {
+            let alpha = 3 / 2;
+            if (landscape.fitness(algorithm.state.population[0].coords) <= landscape.fitness(algorithm.state.m)) {
+                algorithm.state.sigma = algorithm.state.sigma * alpha
+            } else {
+                algorithm.state.sigma = algorithm.state.sigma * (1 / Math.pow(alpha, 1 / 4))
+                {
+                    highlight_row: 4
+                }
+            }
+
+        },
     ]
 }

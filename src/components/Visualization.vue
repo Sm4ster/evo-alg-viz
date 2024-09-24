@@ -31,34 +31,36 @@
               <DialogPanel
                   class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8  sm:p-6">
 
-                <div class="flex flex-col space-y-6 border border-indigo-600 rounded p-5 bg-white">
-                  <div class="">
-                    <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">examples</h3>
+                <div class="flex space-x-12 border border-indigo-600 rounded p-5 bg-white">
+                  <div class="w-96">
+                    <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">Animations</h3>
                     <RadioSelect :options="algorithms" :selected_id="animation_id"
                                  @update="animation_id = $event"></RadioSelect>
 
                   </div>
-                  <div class="flex flex-col justify-between">
+                  <div class="flex flex-col w-96 justify-between bg-stone-100">
                     <div class="pb-8">
                       <div class="flex flex-col space-y-4">
-                        <div class="flex justify-center space-x-5">
+                        <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">General Options</h3>
+                        <div class="flex justify-between mx-5">
                           <span class="text-sm text-gray-500">automatic animation on/off</span>
                           <Toggle v-model="loop.on"></Toggle>
                         </div>
-                        <div class="flex justify-center">
-                          <button
-                              v-for="start_state_option in ['manual', 'random', 'prev_state']"
-                              @click="start_state=start_state_option"
-                              :class="[
-                            start_state === start_state_option ? 'bg-indigo-600 text-white font-semibold' : 'text-indigo-600' ,
-                            start_state_option === 0 ? ' border-l rounded-l' : '',
-                            start_state_option === 2 ? ' rounded-r border-r' : '',
-                            'border-y border-indigo-600 py-0.5 px-3 h-8']">
-                            {{ start_state_option }}
-                          </button>
+                        <div class="flex justify-between mx-5">
+                          <span class="text-sm text-gray-500">loop animation</span>
+                          <Toggle v-model="loop.on"></Toggle>
+                        </div>
+                        <div class="flex justify-between mx-5">
+                          <span class="text-sm text-gray-500">speed</span>
+                          <Toggle v-model="loop.on"></Toggle>
                         </div>
                       </div>
-                      <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">loop settings</h3>
+                      <div v-for="module in animation._modules">
+                        <h3 class="my-5 text-xs text-stone-500 font-semibold w-full text-center">
+                          {{ module.module.name }} Module Options</h3>
+                        <component :is="module.module.name + 'Options'"
+                                   @change="module.module.options.handler($event)"/>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -92,38 +94,27 @@ import * as d3 from 'd3'
 import katex from "katex";
 import {ref} from 'vue'
 
-import OnePlusOneES from "../animations/algorithms/1+1-ES.js";
-import OnePlusOneCMAES from "../animations/algorithms/1+1-CMA-ES.js";
-import NormalForm from "../animations/misc/NormalForm.js";
-import NormalFormTransformation from "../animations/misc/NormalFormTransformation.js";
-import NormalDistribution from "../animations/misc/NormalDistribution.js";
-import Scene1 from "../animations/IntroductionToES/Scene1.js";
-import Test from "../animations/Test.js"
-
 import ParameterButton from "./misc/ParameterButton.vue";
 import Toggle from "./misc/Toggle.vue";
 import RadioSelect from "./misc/RadioSelect.vue";
 import {Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot} from '@headlessui/vue'
 import {graphics, equations, viewBox} from "./GraphicUtils.js";
 
+// dynamic imports of everything in the folder @/src/animations
+const scripts = import.meta.glob('../animations/**/animation.js', {eager: true});
+const algorithms = Object.entries(scripts).map(([path, module], id) => {
+  const parts = path.split('/');
+  const module_name = '/' + parts[parts.length - 2] + '/';
 
-const algorithms = [
-  {id: 0, name: "1+1-ES", class: new OnePlusOneES()},
-  {id: 1, name: "1+1-CMA-ES", class: new OnePlusOneCMAES()},
-  {id: 2, name: "CMA-ES Normalform", class: new NormalForm()},
-  {id: 3, name: "CMA-ES Normalform Transformation", class: new NormalFormTransformation()},
-  {id: 4, name: "Normal Distribution", class: new NormalDistribution()},
-  {id: 5, name: "Scene 1", class: new Scene1()},
-  {id: 6, name: "Test", class: new Test()},
-]
-
+  return {id, name: module_name, class: new module.default()}
+});
 
 export default {
   name: "ParameterGraph",
   components: {RadioSelect, Toggle, ParameterButton, Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot},
   data() {
     return {
-      animation_id: 0,
+      animation_id: 1,
 
       steps: [],
       current_step: 0,
@@ -262,11 +253,14 @@ export default {
       }
 
     },
-    init_animation(){
+    init_animation() {
       this.animation.init()
 
-      for(let module of this.animation._modules) {
+      for (let module of this.animation._modules) {
         module.module.init(d3.select("#modules").append("g").attr("id", module.alias))
+
+        if (module.module.options) this.$.components[module.module.name + "Options"] = module.module.options.component
+        console.log(this.$.components)
       }
 
       this.steps = this.animation.fill_step_cache()

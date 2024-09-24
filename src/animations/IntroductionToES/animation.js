@@ -1,10 +1,8 @@
-import parentAnimation from "../lib/StateGenerator.js";
-
+import parentAnimation from "../parentAnimation.js";
 import knob from './graphics/knob-svgrepo-com.svg?raw'
 import machine from './graphics/machinery-svgrepo-com.svg?raw'
-import _ from 'lodash';
 
-export default class Scene1 extends parentAnimation {
+export default class Animation extends parentAnimation {
 
     start_state = {
         y_axis: true,

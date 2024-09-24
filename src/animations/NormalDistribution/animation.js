@@ -1,5 +1,5 @@
 import * as math from "mathjs";
-import parentAnimation from "../lib/StateGenerator.js";
+import parentAnimation from "../parentAnimation.js";
 import numeric from 'numeric';
 import MultivariateNormal from "multivariate-normal";
 
@@ -8,7 +8,7 @@ import MultivariateNormal from "multivariate-normal";
 window.numeric = numeric;
 
 
-export default class NormalDistribution extends parentAnimation {
+export default class Animation extends parentAnimation {
 
     start_state = {
         show_C: false,
