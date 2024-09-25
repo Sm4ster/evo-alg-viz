@@ -43,16 +43,26 @@
                       <div class="flex flex-col space-y-4">
                         <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">General Options</h3>
                         <div class="flex justify-between mx-5">
-                          <span class="text-sm text-gray-500">automatic animation on/off</span>
-                          <Toggle v-model="loop.on"></Toggle>
+                          <span class="text-sm text-gray-500">Loop Animation</span>
+                          <Toggle v-model="loop"></Toggle>
                         </div>
                         <div class="flex justify-between mx-5">
-                          <span class="text-sm text-gray-500">loop animation</span>
-                          <Toggle v-model="loop.on"></Toggle>
+                          <span class="text-sm text-gray-500">Automatic Animation</span>
+                          <div class="flex items-center space-x-2">
+                            <input type="number" min="0" class="border-indigo-600 rounded border h-6 w-16 text-sm px-1"
+                                   v-model="delay">
+                            <div class="text-xs">ms</div>
+                            <Toggle v-model="auto"></Toggle>
+                          </div>
+
                         </div>
-                        <div class="flex justify-between mx-5">
-                          <span class="text-sm text-gray-500">speed</span>
-                          <Toggle v-model="loop.on"></Toggle>
+                        <div class="flex justify-between mx-5 text-center">
+                          <span class="text-sm text-gray-500">Animation Speed <button @click="speed = 1"
+                                                                                      class="text-indigo-600 text-xs">Reset</button></span>
+
+                          <div class="flex items-center">
+                            <LogSlider v-model="speed"/>
+                          </div>
                         </div>
                       </div>
                       <div v-for="module in animation._modules">
@@ -96,9 +106,11 @@ import {ref} from 'vue'
 
 import ParameterButton from "./misc/ParameterButton.vue";
 import Toggle from "./misc/Toggle.vue";
+import LogSlider from "./misc/LogSlider.vue"
 import RadioSelect from "./misc/RadioSelect.vue";
 import {Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot} from '@headlessui/vue'
 import {graphics, equations, viewBox} from "./GraphicUtils.js";
+import {findMaxDurationDelaySum} from "./functions.js"
 
 // dynamic imports of everything in the folder @/src/animations
 const scripts = import.meta.glob('../animations/**/animation.js', {eager: true});
@@ -111,7 +123,17 @@ const algorithms = Object.entries(scripts).map(([path, module], id) => {
 
 export default {
   name: "ParameterGraph",
-  components: {RadioSelect, Toggle, ParameterButton, Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot},
+  components: {
+    RadioSelect,
+    Toggle,
+    ParameterButton,
+    Dialog,
+    DialogPanel,
+    DialogTitle,
+    TransitionChild,
+    TransitionRoot,
+    LogSlider
+  },
   data() {
     return {
       animation_id: 1,
@@ -128,19 +150,20 @@ export default {
         steps: true,
         settings: false,
       },
-      interval_id: false,
-      loop: {
-        on: false,
-        duration: 1000,
-        delay: 1000,
-      },
+
+      //settings
+      loop: true,
+      auto: false,
+      delay: 1000,
+      speed: 1,
+
+      auto_timeout_id: null,
       update_flag: true,
     }
   },
   watch: {
     animation_id() {
-      this.update({...this.steps[this.current_step], duration: 0});
-
+      this.update(this.steps[this.current_step]);
     },
     current_step: function (step, old_step) {
       if (step === 0) {
@@ -152,20 +175,26 @@ export default {
       }
 
       if (step === (old_step + 1)) this.update(this.steps[this.current_step]);
-      else this.update({...this.steps[this.current_step], duration: 0})
+      else this.update(this.steps[this.current_step])
 
     },
 
-    loop: {
+    auto: {
       handler(params) {
-        if (this.intervalId) {
-          clearInterval(this.intervalId);
-        }
+        if (this.auto) {
+          const scheduleNextStep = () => {
+            return window.setTimeout(() => {
+              this.next_step();
+              // Schedule the next timeout after this step
+              this.auto_timeout_id = scheduleNextStep();
+            }, this.next_step_duration() + this.delay); // Set delay dynamically if needed
+          };
 
-        if (this.loop.on) {
-          this.intervalId = setInterval(() => {
-            this.current_step = (this.current_step + 1) % (this.steps.length);
-          }, this.loop.delay + this.loop.duration);
+          // Start the recursive timeout calls
+          this.auto_timeout_id = scheduleNextStep();
+        } else {
+          clearTimeout(this.auto_timeout_id);
+          this.auto_timeout_id = null; // Reset the timeout ID
         }
       },
       deep: true
@@ -228,7 +257,6 @@ export default {
     width() {
       return this.zoom.value * this.base_width
     },
-
   },
   methods: {
     update(data) {
@@ -258,9 +286,7 @@ export default {
 
       for (let module of this.animation._modules) {
         module.module.init(d3.select("#modules").append("g").attr("id", module.alias))
-
         if (module.module.options) this.$.components[module.module.name + "Options"] = module.module.options.component
-        console.log(this.$.components)
       }
 
       this.steps = this.animation.fill_step_cache()
@@ -285,8 +311,18 @@ export default {
     ,
     stopDrag() {
       this.dragging = false;
-    }
-    ,
+    },
+    next_step_duration() {
+      const next_step_id = (this.current_step + 1) % (this.steps.length)
+      return findMaxDurationDelaySum(this.steps[next_step_id])
+    },
+    next_step() {
+      this.current_step = (this.current_step + 1) % (this.steps.length);
+
+    },
+    prev_step() {
+      this.current_step = (this.current_step - 1 + this.steps.length) % (this.steps.length);
+    },
     keydown(e) {
       switch (e.key) {
         case "s":
@@ -307,11 +343,11 @@ export default {
           e.preventDefault()
           break;
         case "ArrowLeft":
-          this.current_step = (this.current_step - 1 + this.steps.length) % (this.steps.length);
+          this.prev_step();
           e.preventDefault()
           break;
         case "ArrowRight":
-          this.current_step = (this.current_step + 1) % (this.steps.length);
+          this.next_step
           e.preventDefault()
           break;
         default:
