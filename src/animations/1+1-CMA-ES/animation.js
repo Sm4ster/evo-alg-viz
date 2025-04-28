@@ -2,6 +2,8 @@ import * as math from "mathjs";
 import parentAnimation from "../parentAnimation.js";
 import numeric from 'numeric';
 import MultivariateNormal from "multivariate-normal";
+import ConvexQuadratic2D from "../../modules/ConvexQuadratic2D/module.js";
+import EvolutionStrategies from "../../modules/EvolutionStrategies/module.js";
 
 // this is necessary for MultivariateNormal to work, do not change!!
 window.numeric = numeric;
@@ -9,75 +11,89 @@ window.numeric = numeric;
 
 export default class OnePlusOneCMAES extends parentAnimation {
 
+    modules = [
+        {landscape: new ConvexQuadratic2D},
+        {algorithm: new EvolutionStrategies}
+    ]
+
+
+    app_defaults = {
+        start_state: "prev_state"
+    }
+
     start_state = {
-        highlight_row: 0,
-        latex: [
-            {class: "", string: "0. \\ \\textbf{while} \\ \\textit{stopping criterion not met} \\ \\textbf{do}"},
-            {class: "", string: "1. \\quad z \\sim \\mathcal{N}(0, C) \\ , \\  x = m + \\sigma \\cdot z"},
-            {class: "", string: "2. \\quad \\textbf{if} \\ f(x) \\leq f(m) \\ \\textbf{then}"},
-            {class: "", string: "3. \\qquad m \\gets x"},
-            {class: "", string: "4. \\qquad\\sigma \\gets \\sigma \\cdot e^{\\frac{1}{2}}"},
-            {class: "", string: "5. \\qquad C \\gets \\frac{4}{5} \\cdot C + \\frac{1}{5} \\cdot zz^T"},
-            {class: "", string: "6. \\quad \\textbf{else}"},
-            {class: "", string: "7. \\qquad\\sigma \\gets \\sigma \\cdot e^{\\text{-}\\frac{1}{9}}"},
-        ]
+        viewbox: {
+            zoom: 1,
+            x: 0,
+            y: 0,
+        },
+
+        equations: [
+            {class: "", value: "0. \\ \\textbf{while} \\ \\textit{stopping criterion not met} \\ \\textbf{do}"},
+            {class: "", value: "1. \\quad z \\sim \\mathcal{N}(0, C) \\ , \\  x = m + \\sigma \\cdot z"},
+            {class: "", value: "2. \\quad \\textbf{if} \\ f(x) \\leq f(m) \\ \\textbf{then}"},
+            {class: "", value: "3. \\qquad m \\gets x"},
+            {class: "", value: "4. \\qquad\\sigma \\gets \\sigma \\cdot e^{\\frac{1}{2}}"},
+            {class: "", value: "5. \\qquad C \\gets \\frac{4}{5} \\cdot C + \\frac{1}{5} \\cdot zz^T"},
+            {class: "", value: "6. \\quad \\textbf{else}"},
+            {class: "", value: "7. \\qquad\\sigma \\gets \\sigma \\cdot e^{\\text{-}\\frac{1}{9}}"},
+        ],
+
     }
 
     steps = [
-        prev_state => {
-            let distribution = MultivariateNormal([0, 0], prev_state.C);
+        ({algorithm}) => {
+            console.log(algorithm)
+            let distribution = MultivariateNormal([0, 0], algorithm.state.C);
 
             let z = distribution.sample()
-            let x = math.add(prev_state.m, math.multiply(prev_state.sigma, z))
+            let x = math.add(algorithm.state.m, math.multiply(algorithm.state.sigma, z))
 
-            return {
-                z,
-                population: [{delay: 0, r: 5, color: "gray", coords: x}],
-                highlight_row: 1,
-            }
+            algorithm.state.population =  [{delay: 0, r: 5, color: "gray", coords: x}]
         },
-        (prev_state) => {
-            return {
-                highlight_row: 2,
-                population: [{
-                    delay: 0,
-                    r: 5,
-                    color: this.fitness(prev_state.population[0].coords) > this.fitness(prev_state.m) ? "red" : "green",
-                    coords: prev_state.population[0].coords
-                }]
-            }
+        ({algorithm, landscape}) => {
+            algorithm.state.population =[{
+                delay: 0,
+                r: 5,
+                color: landscape.fitness(algorithm.state.population[0].coords) > landscape.fitness(algorithm.state.m) ? "red" : "green",
+                coords: algorithm.state.population[0].coords
+            }]
         },
-        (prev_state) => {
-            if (this.fitness(prev_state.population[0].coords) <= this.fitness(prev_state.m)) {
-                return {highlight_row: 3, m: prev_state.population[0].coords}
+        ({algorithm, landscape}) => {
+            if (landscape.fitness(algorithm.state.population[0].coords) <= landscape.fitness(algorithm.state.m)) {
+                algorithm.state.m = algorithm.state.population[0].coords
+                // return {highlight_row: 3, m:}
             } else {
-                return {highlight_row: 6}
+                // return {highlight_row: 6}
             }
 
         },
-        (prev_state) => {
-            if (this.fitness(prev_state.population[0].coords) <= this.fitness(prev_state.m)) {
+        ({algorithm, landscape}) => {
+            if (landscape.fitness(algorithm.state.population[0].coords) <= landscape.fitness(algorithm.state.m)) {
                 // case success
-                return {highlight_row: 4, sigma: prev_state.sigma * Math.pow(Math.E, 1 / 2)}
+                algorithm.state.sigma = algorithm.state.sigma * Math.pow(Math.E, 1 / 2)
+                // return {highlight_row: 4, sigma: }
 
             } else {
                 // case no success
-                return {highlight_row: 7, sigma: prev_state.sigma * (1 / Math.pow(Math.E, 1 / 9))}
+                algorithm.state.sigma = algorithm.state.sigma * (1 / Math.pow(Math.E, 1 / 9))
+                // return {highlight_row: 7, sigma: }
             }
 
         },
-        (prev_state) => {
-            if (this.fitness(prev_state.population[0].coords) <= this.fitness(prev_state.m)) {
-                let outer = math.multiply(math.transpose([prev_state.z]), [prev_state.z]);
-
-                let C = math.add(math.multiply(0.8, prev_state.C), math.multiply(0.2, outer))
-
+        ({algorithm, landscape}) => {
+            if (landscape.fitness(algorithm.state.population[0].coords) <= landscape.fitness(algorithm.state.m)) {
                 // case success
-                return {highlight_row: 5, C}
+                let outer = math.multiply(math.transpose([algorithm.state.z]), [algorithm.state.z]);
+
+                algorithm.state.C = math.add(math.multiply(0.8, algorithm.state.C), math.multiply(0.2, outer))
+
+
+                //return {highlight_row: 5}
 
             } else {
                 // case no success
-                return {}
+                // return {}
             }
 
         },

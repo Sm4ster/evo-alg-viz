@@ -24,6 +24,7 @@ export default class {
 
     start_state = {}
     steps = []
+    step_cache = []
 
     init() {
         for (let module of this.modules) {
@@ -33,24 +34,21 @@ export default class {
                 module = module[Object.keys(module)[0]]
             } else module_alias = module.name
 
+            module.parent_animation = this
             this._modules.push({alias: module_alias, module: module})
         }
     }
 
-    set_start(state) {
-        this.start_state.algorithm = {...this._start_state.algorithm, ...this.start_state.algorithm, ...state}
-        return this.fill_step_cache()
-    }
-
-
     fill_step_cache() {
-        let step_cache = [];
+        this.step_cache = [];
 
         // add default values to create a complete cur_state
-        let cur_state = _.merge({}, this._start_state, this.start_state)
+        let cur_state= _.merge({}, this._start_state, this.start_state)
+
         for (const {module, alias} of this._modules) {
-            cur_state[alias] = _.merge(module.start_state, cur_state[alias])
+            cur_state[alias] = _.merge(_.cloneDeep(module.start_state), _.cloneDeep(cur_state[alias]))
         }
+
 
         let exp_state = applyDefaultValues(_.cloneDeep(cur_state), this.base_defaults, defaultValues)
 
@@ -58,7 +56,7 @@ export default class {
             exp_state[alias] = applyDefaultValues(_.merge(module.start_state, cur_state[alias]), this.base_defaults, module.defaults)
         }
 
-        step_cache.push(_.cloneDeep(exp_state))
+        this.step_cache.push(_.cloneDeep(exp_state))
 
         for (let cur_step = 0; cur_step < this.steps.length; cur_step++) {
             // update the cur_state
@@ -72,10 +70,10 @@ export default class {
                     applyDefaultValues(cur_state[alias], this.base_defaults, module.defaults)
             }
 
-            step_cache.push(_.cloneDeep(exp_state))
+            this.step_cache.push(_.cloneDeep(exp_state))
         }
 
-        return step_cache
+        return this.step_cache
     }
 
 }

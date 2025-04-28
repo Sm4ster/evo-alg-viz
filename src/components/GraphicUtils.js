@@ -120,12 +120,13 @@ export function viewBox(element, data, base_width, base_height, vars) {
 }
 
 export function equations(element, data) {
+    console.log("updated=?")
     element.selectAll("g.equation")
         .data(data)
         .join(
             enter => {
                 enter.append("g")
-                    .attr("class", "equation text-white")
+                    .attr("class", `equation`)
                     .append("g")
                     .attr("class", "position_x")
                     .attr("transform", d => `translate(${d.x.value} 0)`)
@@ -144,7 +145,9 @@ export function equations(element, data) {
                     .attr("height", 1)
                     .html(d => katex.renderToString(d.value))
                     .each(function (d) {
-                        d3.select(this.firstElementChild.children[1]).attr("class", `${d.innerClass}`)
+                        d3.select(this.firstElementChild.children[1])
+                            .attr("class", `${d.innerClass}`)
+                            .attr("style", `background-color: ${d.background}`)
                     })
                     .transition()
                     .attr("opacity", 1)

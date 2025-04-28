@@ -1,15 +1,15 @@
 import {defaultDefaults} from "../../components/defaults.js";
 import * as _ from "lodash";
 import * as math from "mathjs";
-import options from "./options.vue"
+import options from "./configuration.vue"
 
 
 export default class {
     name = "ConvexQuadratic"
-    options = {
+    configuration = {
         component: options,
-        handler(data){
-            console.log(data)
+        handler: (data) => {
+            this.start_state.hessian = data.hessian;
         }
     }
 

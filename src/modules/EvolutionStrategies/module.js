@@ -2,14 +2,53 @@ import {defaultDefaults} from "../../components/defaults.js";
 import {parseTransform} from "../../components/GraphicUtils.js";
 import * as math from "mathjs";
 import * as d3 from 'd3'
-import options from "./options.vue";
+import * as _ from 'lodash'
+import options from "./configuration.vue";
 
 export default class {
     name = "EvolutionStrategies"
-    options = {
+    configuration = {
         component: options,
-        handler(data){
-            console.log(data)
+        handler:  (data) => {
+            this.options = data.options
+
+            this.start_state.state.m = data.params.m
+            this.start_state.state.C = [[data.params.A, data.params.B],[data.params.B, data.params.C]]
+            this.start_state.state.sigma = data.params.sigma
+
+            console.log(data.params)
+        }
+    }
+
+    options = {
+        restart: "prev_state"
+    }
+
+    on_reset(prev_states) {
+        if (this.options.restart === "random") {
+            this.start_state.state.m = [_.random(0, 2, true), _.random(0, 2, true)]
+            this.start_state.state.sigma = _.random(1, 5, true)
+
+            // get valid covariance matrix
+            let A = _.random(0.1, 10)
+            let C = _.random(0.1, 10)
+
+            const upperBound = Math.sqrt(A * C);
+            // Generate a uniformly distributed random number between 0 and 1
+            const u = _.random(0, 1, true);
+            // Transform it to be denser towards the edges
+            const t = Math.sin(Math.PI * u);
+            // Scale and shift to the range [-sqrt(AC), sqrt(AC)]
+            let B = (2 * t - 1) * upperBound;
+
+            this.start_state.C = [[A, B], [B, C]]
+
+        }
+        if (this.options.restart === "prev_state") {
+            let prev_state = prev_states[prev_states.length - 1].state
+            this.start_state.state.m = [...prev_state.m]
+            this.start_state.state.C = [...prev_state.C]
+            this.start_state.state.sigma = prev_state.sigma
         }
     }
 
@@ -127,22 +166,7 @@ export default class {
         }
     }
 
-    set_random_start() {
-        this.params.A = this.$_.random(0.1, 10)
-        this.params.C = this.$_.random(0.1, 10)
 
-        const upperBound = Math.sqrt(this.params.A * this.params.C);
-        // Generate a uniformly distributed random number between 0 and 1
-        const u = this.$_.random(0, 1, true);
-        // Transform it to be denser towards the edges
-        const t = Math.sin(Math.PI * u);
-        // Scale and shift to the range [-sqrt(AC), sqrt(AC)]
-        this.params.B = (2 * t - 1) * upperBound;
-
-        this.params.m[0] = this.$_.random(0, 2, true)
-        this.params.m[1] = this.$_.random(0, 2, true)
-        this.params.sigma = this.$_.random(1, 5, true)
-    }
 }
 
 

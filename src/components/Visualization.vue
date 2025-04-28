@@ -1,6 +1,6 @@
 <template>
   <div class="relative">
-    <svg class="bg-black h-full z-10" ref="svg"
+    <svg :class="[dark ? 'bg-black' : 'bg-white', ' h-full z-10']" ref="svg"
          :width="base_width"
          :height="base_height"
          :viewBox="`${0} ${0} ${width} ${height}`"
@@ -9,14 +9,14 @@
         <g id="viewbox_y" :transform="`translate(0 ${-y.value})`">
           <g id="container" :transform="`translate(${width/2} ${height/2})`">
             <g id="modules"></g>
-            <g id="equations"></g>
+            <g id="equations" :class="[dark ? 'text-white': 'text-black', invert ? 'inverted' : '']"></g>
             <g id="graphics"></g>
           </g>
         </g>
       </g>
     </svg>
-    <TransitionRoot as="template" :show="show.settings">
-      <Dialog class="relative z-10" @close="show.settings = false">
+    <TransitionRoot as="template" :show="show_settings">
+      <Dialog class="relative z-10" @close="show_settings = false">
         <TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0" enter-to="opacity-100"
                          leave="ease-in duration-200" leave-from="opacity-100" leave-to="opacity-0">
           <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"/>
@@ -43,6 +43,14 @@
                       <div class="flex flex-col space-y-4">
                         <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">General Options</h3>
                         <div class="flex justify-between mx-5">
+                          <span class="text-sm text-gray-500">Dark Background</span>
+                          <Toggle v-model="dark"></Toggle>
+                        </div>
+                        <div class="flex justify-between mx-5">
+                          <span class="text-sm text-gray-500">Invert Colors</span>
+                          <Toggle v-model="invert"></Toggle>
+                        </div>
+                        <div class="flex justify-between mx-5">
                           <span class="text-sm text-gray-500">Loop Animation</span>
                           <Toggle v-model="loop"></Toggle>
                         </div>
@@ -68,8 +76,10 @@
                       <div v-for="module in animation._modules">
                         <h3 class="my-5 text-xs text-stone-500 font-semibold w-full text-center">
                           {{ module.module.name }} Module Options</h3>
-                        <component :is="module.module.name + 'Options'"
-                                   @change="module.module.options.handler($event)"/>
+                        <component :is="module.module.name + 'Configuration'"
+                                   :data="module.module.start_state"
+                                   :options="module.module.options"
+                                   @change="module.module.configuration.handler($event)"/>
                       </div>
                     </div>
                   </div>
@@ -81,11 +91,12 @@
       </Dialog>
     </TransitionRoot>
 
-    <div v-if="show.steps" class="absolute bottom-0 right-0 bg-black">
+    <div v-if="show_steps" class="absolute bottom-0 right-0 bg-transparent mr-10 mb-5">
       <div class="flex justify-center">
         <button
             v-for="i in $_.range(steps.length)"
             @click="current_step=i"
+            @dblclick="reset_animation();current_step=i;update(steps[i])"
             :class="[
                             current_step === i ? 'bg-indigo-600 text-white font-semibold' : 'text-indigo-600' ,
                             i === 0 ? ' border-l rounded-l' : '',
@@ -94,10 +105,16 @@
           {{ i }}
         </button>
       </div>
-      <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1 bg-black">steps</h3>
+      <h3 class="text-xs text-stone-500 font-semibold w-full text-center mt-1">steps</h3>
     </div>
   </div>
 </template>
+
+<style>
+.inverted {
+  filter: invert(1);
+}
+</style>
 
 <script>
 import * as d3 from 'd3'
@@ -110,7 +127,7 @@ import LogSlider from "./misc/LogSlider.vue"
 import RadioSelect from "./misc/RadioSelect.vue";
 import {Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot} from '@headlessui/vue'
 import {graphics, equations, viewBox} from "./GraphicUtils.js";
-import {findMaxDurationDelaySum} from "./functions.js"
+import {findMaxDurationDelaySum, multiplyDurationAndDelay} from "./functions.js"
 
 // dynamic imports of everything in the folder @/src/animations
 const scripts = import.meta.glob('../animations/**/animation.js', {eager: true});
@@ -118,7 +135,7 @@ const algorithms = Object.entries(scripts).map(([path, module], id) => {
   const parts = path.split('/');
   const module_name = '/' + parts[parts.length - 2] + '/';
 
-  return {id, name: module_name, class: new module.default()}
+  return {id, name: module_name.slice(1, -1), class: new module.default()}
 });
 
 export default {
@@ -136,7 +153,7 @@ export default {
   },
   data() {
     return {
-      animation_id: 1,
+      animation_id: 3,
 
       steps: [],
       current_step: 0,
@@ -146,12 +163,13 @@ export default {
       base_height: null,
 
 
-      show: {
-        steps: true,
-        settings: false,
-      },
+      show_steps: true,
+      show_settings: false,
+
 
       //settings
+      dark: false,
+      invert: false,
       loop: true,
       auto: false,
       delay: 1000,
@@ -166,55 +184,42 @@ export default {
       this.update(this.steps[this.current_step]);
     },
     current_step: function (step, old_step) {
-      if (step === 0) {
-        // this.update_flag = false;
-        // for(let module of this.animation.modules){
-        //   module.loop()
-        // }
-        // this.update_flag = true;
+      if (step === 0 && old_step === this.steps.length - 1) {
+        this.reset_animation();
       }
-
-      if (step === (old_step + 1)) this.update(this.steps[this.current_step]);
-      else this.update(this.steps[this.current_step])
-
+      this.update(this.steps[this.current_step])
+    },
+    show_settings(open) {
+      if (!open) {
+        this.steps = this.animation.fill_step_cache();
+        this.current_step = 0;
+        this.update(this.steps[this.current_step]);
+      }
     },
 
-    auto: {
-      handler(params) {
-        if (this.auto) {
-          const scheduleNextStep = () => {
-            return window.setTimeout(() => {
-              this.next_step();
-              // Schedule the next timeout after this step
-              this.auto_timeout_id = scheduleNextStep();
-            }, this.next_step_duration() + this.delay); // Set delay dynamically if needed
-          };
+    auto(params) {
+      if (this.auto) {
+        const scheduleNextStep = () => {
+          return window.setTimeout(() => {
+            this.next_step();
+            // Schedule the next timeout after this step
+            this.auto_timeout_id = scheduleNextStep();
+          }, this.next_step_duration() + this.delay); // Set delay dynamically if needed
+        };
 
-          // Start the recursive timeout calls
-          this.auto_timeout_id = scheduleNextStep();
-        } else {
-          clearTimeout(this.auto_timeout_id);
-          this.auto_timeout_id = null; // Reset the timeout ID
-        }
-      },
-      deep: true
-    },
-
+        // Start the recursive timeout calls
+        this.auto_timeout_id = scheduleNextStep();
+      } else {
+        clearTimeout(this.auto_timeout_id);
+        this.auto_timeout_id = null; // Reset the timeout ID
+      }
+    }
   },
   created() {
     // Define reactive references using ref
     this.x = ref(0);
     this.y = ref(0);
     this.zoom = ref(1);
-
-    // this.start_state = this.animation.app_defaults.start_state;
-    // this.steps = this.animation.set_start({
-    //   m: [...this.params.m],
-    //   C: [[this.params.A, this.params.B], [this.params.B, this.params.C]],
-    //   sigma: this.params.sigma,
-    //   Q: [[this.hessian.A, this.hessian.B], [this.hessian.B, this.hessian.C]]
-    // })
-    //
   },
   mounted() {
     document.addEventListener('keydown', this.keydown)
@@ -262,6 +267,9 @@ export default {
     update(data) {
       console.log("data:", data)
 
+      // insert multiplier for speed and delay
+      multiplyDurationAndDelay(data, this.speed)
+
       // viewbox
       viewBox(d3.select(this.$refs.svg), data.viewbox, this.base_width, this.base_height,
           {x: this.x, y: this.y, zoom: this.zoom})
@@ -270,7 +278,7 @@ export default {
       graphics(d3.select("#graphics"), data.graphics)
 
       // math and formulas
-      equations(d3.select("#equations"), data.equations)
+      equations(d3.select("#equations"), data.equations, this.dark, this.invert)
 
       // let modules update the canvas
       for (const {module, alias} of this.animation._modules) {
@@ -286,10 +294,17 @@ export default {
 
       for (let module of this.animation._modules) {
         module.module.init(d3.select("#modules").append("g").attr("id", module.alias))
-        if (module.module.options) this.$.components[module.module.name + "Options"] = module.module.options.component
+        if (module.module.configuration) this.$.components[module.module.name + "Configuration"] = module.module.configuration.component
       }
 
       this.steps = this.animation.fill_step_cache()
+    },
+    reset_animation() {
+      if ('on_reset' in this.animation) this.animation.on_reset(this.steps);
+      for (let module of this.animation._modules) {
+        if ('on_reset' in module.module) module.module.on_reset(this.steps.map(e => e[module.alias]))
+      }
+      this.steps = this.animation.fill_step_cache();
     },
 
     drag(e) {
@@ -326,13 +341,13 @@ export default {
     keydown(e) {
       switch (e.key) {
         case "s":
-          this.show.settings = !this.show.settings;
+          this.show_settings = !this.show_settings;
           break;
         case "Escape":
-          this.show.settings = false;
+          this.show_settings = false;
           break;
         case "w":
-          this.show.steps = !this.show.steps;
+          this.show_steps = !this.show_steps;
           break;
         case "ArrowUp":
           this.current_step = this.steps.length;
@@ -347,7 +362,7 @@ export default {
           e.preventDefault()
           break;
         case "ArrowRight":
-          this.next_step
+          this.next_step();
           e.preventDefault()
           break;
         default:

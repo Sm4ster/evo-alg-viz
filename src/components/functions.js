@@ -29,3 +29,21 @@ export function findMaxDurationDelaySum(obj) {
     // Return the maximum sum found
     return maxSum;
 }
+
+export function multiplyDurationAndDelay(obj, multiplier) {
+    // Check if the current obj is indeed an object
+    if (typeof obj === 'object' && obj !== null) {
+        for (let key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                // If the key is "duration" or "delay" and its value is a number, multiply it
+                if ((key === 'duration' || key === 'delay') && typeof obj[key] === 'number') {
+                    obj[key] *= multiplier;
+                }
+                // Recursively check nested objects
+                if (typeof obj[key] === 'object') {
+                    multiplyDurationAndDelay(obj[key], multiplier);
+                }
+            }
+        }
+    }
+}

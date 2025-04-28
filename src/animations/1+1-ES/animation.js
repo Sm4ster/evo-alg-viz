@@ -30,22 +30,21 @@ export default class OnePlusOneES extends parentAnimation {
 
         equations: [
             {
-                innerClass: "bg-black",
+                background: "#FF00FF",
+                innerClass: "border p-5 rounded",
                 class: "text-indigo-700",
-                scaling: 1,
+                scaling: 2,
                 x: 500,
                 y: -550,
                 value: "0. \\ \\textbf{for} \\ t=1,2,..., \\textit{until satisfied} \\ \\textbf{do}"
             },
             {
-                innerClass: "bg-black",
                 x: 500,
                 y: -520,
                 scaling: 1,
                 value: "1. \\quad x_t \\sim m_t + \\sigma_t \\cdot \\mathcal{N}(0, I)"
             },
             {
-                innerClass: "bg-black",
                 x: 500,
                 y: -490,
                 scaling: 1,
@@ -53,7 +52,6 @@ export default class OnePlusOneES extends parentAnimation {
                 value: "2. \\quad \\textbf{if} \\ f(x_t) \\leq f(m_t) \\ \\textbf{then}"
             },
             {
-                innerClass: "bg-black",
                 x: 500,
                 y: -460,
                 scaling: 1,
@@ -61,7 +59,6 @@ export default class OnePlusOneES extends parentAnimation {
                 value: "3. \\qquad m_{t+1} \\leftarrow x_t"
             },
             {
-                innerClass: "bg-black",
                 x: 500,
                 y: -430,
                 scaling: 1,
@@ -97,6 +94,7 @@ export default class OnePlusOneES extends parentAnimation {
 
     steps = [
         ({algorithm, equations}) => {
+
             let distribution = MultivariateNormal(algorithm.state.m, math.multiply(algorithm.state.sigma, algorithm.state.C));
 
             algorithm.state.population = [{r: 5, color: "gray", coords: distribution.sample()}]

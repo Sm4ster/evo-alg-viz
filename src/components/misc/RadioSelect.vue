@@ -19,7 +19,7 @@ export default {
           <label class="select-none font-medium text-gray-900">{{ option.name }}</label>
         </div>
         <div class="ml-3 flex h-6 items-center">
-          <input  name="plan" type="radio" :checked="option.id === selected_id" class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600" />
+          <input name="plan" type="radio" :checked="option.id === selected_id" class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600" />
         </div>
       </div>
     </div>
